@@ -20,3 +20,15 @@ We run a small sampling job for each real job to obtain the parameters for both 
 The estimator consists of two parts:
 * `estimator.py`, which is the actual linear estimator. 
 * `main.py`, which uses the estimator to run experiments.
+
+### Estimator
+
+`estimator.py` defines two types of classes: *Jobs* and the *Estimator*. There is a job superclass called *Job*, and then specific job types (like GoogleNet) are children of that class. The *Job* superclass contains very basic information that is shared across all jobs, and knows how to run itself and how to retrieve the output and error. Subclasses define how to copy themselves (needed by the *Estimator*), any additional parameters they need, and the actual arguments needed to run the job.
+
+The estimator currently runs a specific number of samples of the job at a specific number of epochs. It then finds the average time and uses simple fractions to determine how long the job woul take to run given more iterations. 
+
+#### Adding a new Job
+
+1. Get the model and put it in a new directory.
+2. Create a `run.sh` script that can train the model based on given parameters. See `jobs/googleNet/run.sh` for an example.
+3. Create a new subclass of `Job` and implement the `copy` and `get_args` functions.

@@ -12,6 +12,7 @@ class Job:
 		print("Running job " + self.name)
 		output, error = process.communicate()
 		print(self.name + " executed: \n\toutput: " + str(output) + "\n\terror: " + str(error))
+		return output, error
 
 	def copy(self):
 		raise Exception("Unsupported function 'copy' for class JOB")
