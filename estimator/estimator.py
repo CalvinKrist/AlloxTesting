@@ -1,5 +1,5 @@
 import subprocess
-import time
+import time_writter
 
 class Job:
 	def __init__(self, name, epochs):
@@ -46,10 +46,9 @@ class Estimator:
 		times = []
 
 		for _ in range(self.num_samples):
-			t1 = time.perf_counter()
-			jopCopy.run()
-			t2 = time.perf_counter()
-			times.append(t2 - t1) #time in seconds
+			output, error = jopCopy.run()
+			measurements = time_writter.parse_output(output)
+			times.append(sum(measurements))
 			
 		avgTime = sum(times) / len(times)
 		print("Average time : " + str(avgTime) + " over " + str(self.num_epochs) + " epochs.")

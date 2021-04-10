@@ -16,9 +16,14 @@ from src.nets.googlenet import GoogLeNet_cifar
 from src.helper.trainer import Trainer
 from src.helper.evaluator import Evaluator
 
+
 PRETRINED_PATH = '/home/qge2/workspace/data/pretrain/inception/googlenet.npy'
 IM_PATH = '../data/cifar/'
 
+import importlib.util
+spec = importlib.util.spec_from_file_location("time_writter", "../../../time_writter.py")
+time_writter = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(time_writter)
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -54,6 +59,8 @@ def get_args():
     return parser.parse_args()
 
 def train():
+    time_writter.Start()
+
     FLAGS = get_args()
     # Create Dataflow object for training and testing set
     train_data, valid_data = loader.load_cifar(
@@ -85,13 +92,19 @@ def train():
         sess.run(tf.global_variables_initializer())
         writer.add_graph(sess.graph)
         for epoch_id in range(FLAGS.maxepoch):
+            time_writter.LogUpdate()
             # train one epoch
             trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob, summary_writer=writer)
             # test the model on validation set after each epoch
             trainer.valid_epoch(sess, dataflow=valid_data, summary_writer=writer)
             saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
+        time_writter.LogUpdate()
         saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
         writer.close()
+
+        time_writter.LogUpdate()
+        time_writter.PrintResults()
+
 
 def evaluate():
     FLAGS = get_args()
