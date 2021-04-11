@@ -56,3 +56,29 @@ class Estimator:
 		print("Estimated time : " + str(estimated) + " over " + str(job.epochs) + " epochs.")
 
 		return estimated
+
+    def estimate_job_time_linreg(self, job):
+        # Copy the job and change its parameters to estimation parameters
+        jopCopy = job.copy()
+        jopCopy.epochs = self.num_epochs
+
+        # times[0] is initial loading of model
+        # times[1:-1] is time each epoch took
+        # times[-1] is saving the model to a file
+        times = []
+
+        for _ in range(self.num_samples):
+            output, error = jopCopy.run()
+            measurements = time_writter.parse_output(output)
+            times.append(sum(measurements))
+        # We want to use the list of times to build a linear regression 
+        #   model to predict the entire job completion time. i.e. if we 
+        #   train for job.epochs amount. The independent variable is the 
+        #   number of epochs, and the dependent variable is the job 
+        #   completion time at job.epochs amount. 
+        X = list(range(1, (len(times[1:-1]) + 1)))
+        y = times[1:-1]
+        reg = LinearRegression().fit(X, y)
+        print("Regression score: ", reg.score(X, y), " Coefficient: ", reg.coef_, " Intercept: ", reg.intercept_)
+        estimated = reg.predict(int(job.epochs))
+        return estimated
