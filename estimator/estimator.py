@@ -2,10 +2,27 @@ import subprocess
 import time_writter
 
 class Job:
+	JOB_ID = 0
 	def __init__(self, name, epochs):
 		self.name = name
 		self.epochs = epochs
 		self.args = []
+
+		self.id = Job.JOB_ID
+		Job.JOB_ID += 1
+
+		# Configuration
+		self.user = 1
+
+		self.mem = 15
+		self.thread_count = 16
+		self.cpu_compl_time = float('inf')
+		self.cpu_err = 1.0
+
+		self.gpu_count = 1
+		self.gpu_mem = 2.0
+		self.gpu_compl_time = float('inf')
+		self.gpu_err = 1.0
 
 	def run(self):
 		process = subprocess.Popen(self.get_args(), stdout=subprocess.PIPE)
@@ -19,6 +36,15 @@ class Job:
 
 	def get_args(self):
 		raise Exception("Unsupported function 'get_args' for class JOB")
+
+
+	def __str__(self):
+		s = "# " + str(self.id) + "\n"
+		s += "1 " + str(self.id) + " 1 ARRIVAL_TIME queue" + str(self.user) + "\n"
+		s += "stage -1.0 " + str(self.thread_count) + " " + str(self.mem) + " " + str(self.cpu_compl_time) + " " + str(self.gpu_count) + " " + \
+			str(self.gpu_mem) + " " + str(self.gpu_compl_time) + " 1 " + str(self.cpu_err) + " " + str(self.gpu_err) + "\n"
+		s += "0 \n"
+		return s
 
 class GoogleNetJob(Job):
 	def __init__(self, name, epochs=10, batch_size=100, learn_rate=0.1, keep_prob=0.5):
@@ -55,4 +81,5 @@ class Estimator:
 		estimated = avgTime / self.num_epochs * job.epochs
 		print("Estimated time : " + str(estimated) + " over " + str(job.epochs) + " epochs.")
 
-		return estimated
+		job.cpu_compl_time = estimated
+		job.cpu_err = 0.1
