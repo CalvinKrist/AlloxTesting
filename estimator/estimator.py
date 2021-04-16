@@ -1,5 +1,6 @@
 import subprocess
 import time_writter
+from sklearn.linear_model import LinearRegression
 
 class Job:
 	def __init__(self, name, epochs):
