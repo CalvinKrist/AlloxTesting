@@ -56,6 +56,16 @@ def get_args():
     parser.add_argument('--im_name', type=str, default='.png',
                         help='Part of image name')
 
+    # Hardware flags
+    parser.add_argument('--cpu', action='store_true',
+                        help='To use CPU or not')
+    parser.add_argument('--numThreads', type=int, default=16,
+                        help='Number of CPU threads to use')
+    parser.add_argument('--gpu', action='store_true',
+                        help='To use GPU or not')
+    parser.add_argument('--numGPUs', type=int, default=1,
+                        help='The number of GPUs to use')
+
     return parser.parse_args()
 
 def train():
@@ -86,7 +96,24 @@ def train():
     # create a Trainer object for training control
     trainer = Trainer(train_model, valid_model, train_data, init_lr=FLAGS.lr)
 
-    with tf.Session() as sess:
+    # Parse hardware
+    config = None
+    if FLAGS.cpu:
+        #import os
+        #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+        config=tf.ConfigProto(inter_op_parallelism_threads=FLAGS.numThreads,
+                   intra_op_parallelism_threads=FLAGS.numThreads,
+                   device_count={'GPU':0, 'CPU':1})
+    elif FLAGS.gpu:
+        config=tf.ConfigProto(device_count={'GPU':FLAGS.numGPUs, 'CPU':0})
+        visible_gpus = ''
+        for gpu in range(FLAGS.numGPUs):
+            visible_gpus += str(gpu) + ","
+        config.gpu_options.visible_device_list=visible_gpus[:-1] # remove last comma
+    else:
+        raise Exception("Hardware not specified!")
+
+    with tf.Session(config=config) as sess:
         writer = tf.summary.FileWriter(FLAGS.savePath)
         saver = tf.train.Saver()
         sess.run(tf.global_variables_initializer())
