@@ -99,13 +99,13 @@ def train():
     # Parse hardware
     config = None
     if FLAGS.cpu:
-        #import os
-        #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"]="-1"
         config=tf.ConfigProto(inter_op_parallelism_threads=FLAGS.numThreads,
                    intra_op_parallelism_threads=FLAGS.numThreads,
                    device_count={'GPU':0, 'CPU':1})
     elif FLAGS.gpu:
-        config=tf.ConfigProto(device_count={'GPU':FLAGS.numGPUs, 'CPU':0})
+        config=tf.ConfigProto(device_count={'GPU':FLAGS.numGPUs, 'CPU':1})
         visible_gpus = ''
         for gpu in range(FLAGS.numGPUs):
             visible_gpus += str(gpu) + ","
