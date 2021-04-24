@@ -10,14 +10,15 @@ def calc_baselines():
 		alexNet = AlexNetJob(epochs=500)
 		leNet = LeNetJob(epochs=30000)
 
-		googleNet.run_cpu("googleNet_CPU_" + str(i), "results/baselines/googleNet_CPUbaseline_" + str(i))
-		googleNet.run_gpu("googleNet_GPU_" + str(i), "results/baselines/googleNet_GPUbaseline_" + str(i))
+		if "--cpu" in sys.argv:
+			googleNet.run_cpu("googleNet_CPU_" + str(i), "results/baselines/googleNet_CPUbaseline_" + str(i))
+			alexNet.run_cpu("alexNet_GPU_" + str(i), "results/baselines/alexNet_GPUbaseline_" + str(i))
+			leNet.run_cpu("leNet_CPU_" + str(i), "results/baselines/leNet_CPUbaseline_" + str(i))
 
-		alexNet.run_cpu("alexNet_CPU_" + str(i), "results/baselines/alexNet_CPUbaseline_" + str(i))
-		alexNet.run_gpu("alexNet_GPU_" + str(i), "results/baselines/alexNet_GPUbaseline_" + str(i))
-
-		leNet.run_cpu("leNet_CPU_" + str(i), "results/baselines/leNet_CPUbaseline_" + str(i))
-		leNet.run_gpu("leNet_GPU_" + str(i), "results/baselines/leNet_GPUbaseline_" + str(i))
+		if "--gpu" in sys.argv:
+			alexNet.run_gpu("alexNet_CPU_" + str(i), "results/baselines/alexNet_CPUbaseline_" + str(i))
+			googleNet.run_gpu("googleNet_GPU_" + str(i), "results/baselines/googleNet_GPUbaseline_" + str(i))
+			leNet.run_gpu("leNet_GPU_" + str(i), "results/baselines/leNet_GPUbaseline_" + str(i))
 
 if __name__ == '__main__':
 	##############################################
