@@ -53,11 +53,23 @@ class GoogleNetJob(Job):
 		self.keep_prob = keep_prob
 
 	def get_args(self, hardware):
-		if hardware is "cpu":
+		if hardware == "cpu":
 			return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), str(self.epochs),
 			       "--cpu", "--numThreads", str(self.thread_count)]
 		return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), 
 		        str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
+
+class AlexNetJob(Job):
+	def get_args(self, hardware):
+		if hardware is "cpu":
+			return ["jobs/AlexNet/run.sh", str(self.epochs), "--cpu", "--numThreads", str(self.thread_count)]
+		return ["jobs/AlexNet/run.sh", str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
+
+class LeNetJob(Job):
+	def get_args(self, hardware):
+		if hardware is "cpu":
+			return ["jobs/LeNet/run.sh", str(self.epochs), "--cpu", "--numThreads", str(self.thread_count)]
+		return ["jobs/LeNet/run.sh", str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
 
 # job: the job whose CPU and GPU time should be estimated
 # a: the lower percent to use for the estimaton
@@ -79,10 +91,10 @@ def estimate_job_time_linreg(job, a, b):
 	job.gpu_err = 0.1
 
 # job: the job whose CPU and GPU time should be estimated
-# num_epochs: the number of epochs to run the estimation job for
-def estimate_job_time_time_writter(job, num_epochs):
+# prop: the proportion of epochs to run for
+def estimate_job_time_writter(job, prop):
 	original_epochs = job.epochs
-	job.epochs = num_epochs
+	job.epochs = round(original_epochs * prop)
 
 	times = []
 	for _ in range(self.num_samples):

@@ -10,7 +10,7 @@ def get_baselines():
 	for i in range(10):
 		googleNet = GoogleNetJob(epochs=500)
 		alexNet = AlexNetJob(epochs=500)
-		leNet = LeNetJob(epochs=500)
+		leNet = LeNetJob(epochs=30000)
 
 		print("Calculating googleNet baseline " + str(i))
 		start = time.perf_counter()
@@ -68,32 +68,29 @@ if __name__ == '__main__':
 			os.makedirs('results/' + estimation_name)
 
 		job_types = {"googleNet" : GoogleNetJob, "alexNet" : AlexNetJob, "leNet" : LeNetJob}
-		configurations = {"linearRegression" : [(0.6, 0.9), (0.4, 1.1), (0.2, 1.3)], "timeWritter" : [1, 2, 4, 7]}
+		configurations = {"linearRegression" : [(0.6, 0.9), (0.4, 1.1), (0.2, 1.3)], "timeWritter" : [0.002, 0.004, 0.008, 0.014]}
 
 		for job_type, job_class in job_types.items():
 			if not os.path.exists('results/' + estimation_name + '/' + job_type):
 				os.makedirs('results/' + estimation_name + '/' + job_type)
 
 			for i, config in enumerate(configurations[estimation_name]):
-				file_path = ""
-				if estimation_name is "linearRegression":
-					if not os.path.exists('results/' + estimation_name + '/' + job_type + "/config_" + str(i)):
-						os.makedirs('results/' + estimation_name +'/' + job_type + "/config_" + str(i))
-					file_path = 'results/' + estimation_name + '/' + job_type + "/config_" + str(i)
-				elif estimation_name is "timeWritter":
-					if not os.path.exists('results/' + estimation_name + '/' + job_type + "/config_" + str(config)):
-						os.makedirs('results/' + estimation_name +'/' + job_type + "/config_" + str(config))
-					file_path = 'results/' + estimation_name + '/' + job_type + "/config_" + str(config)
+				if not os.path.exists('results/' + estimation_name + '/' + job_type + "/config_" + str(i)):
+					os.makedirs('results/' + estimation_name +'/' + job_type + "/config_" + str(i))
+				file_path = 'results/' + estimation_name + '/' + job_type + "/config_" + str(i)
 
 				# Estimate each job type at each configuration at each estimation method 100 times
 				for itr in range(100):
 					print("Estimating " + file_path)
 
-					job = job_class(epochs=500)
+					if job_type == "leNet":
+						job = job_class(epochs=30000)
+					else:
+						job = job_class(epochs=500)
 					
-					if estimation_name is "linearRegression":
+					if estimation_name == "linearRegression":
 						estimate_job_time_linreg(job, config[0], config[1])
-					elif estimation_name is "timeWritter":
+					elif estimation_name == "timeWritter":
 						estimate_job_time_writter(job, config)
 		
 					jsonStr = json.dumps(job.__dict__)
