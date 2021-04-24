@@ -1,5 +1,13 @@
 import subprocess
 import time_writter
+import os
+
+CPU_TEMPLATE = ""
+with open("cpu_slurm_template.sh") as f:
+	CPU_TEMPLATE = f.read()
+GPU_TEMPLATE = ""
+with open("gpu_slurm_template.sh") as f:
+	GPU_TEMPLATE = f.read()
 
 class Job:
 	JOB_ID = 0
@@ -23,15 +31,27 @@ class Job:
 		self.gpu_compl_time = float('inf')
 		self.gpu_err = 1.0
 
-	def run_cpu(self):
-		process = subprocess.Popen(self.get_args("cpu"), stdout=subprocess.PIPE)
+	def run(self, template, hardware, job_name, output):
+		if not os.path.exists('slurm_scripts'):
+			os.makedirs('slurm_scripts')
+
+		f = template + "\nsrun ./" + ' '.join(self.get_args(hardware))
+		f = f.replace("<NAME>", job_name)
+		f = f.replace("<THREADS>", str(self.thread_count))
+		f = f.replace("<OUTPUT>", output)
+
+		with open('slurm_scripts/' + job_name, "w") as slurm:
+			slurm.write(f)
+
+		process = subprocess.Popen(['sbatch', 'slurm_scripts/' + job_name], stdout=subprocess.PIPE)
 		output, error = process.communicate()
 		return output, error
 
-	def run_gpu(self):
-		process = subprocess.Popen(self.get_args("gpu"), stdout=subprocess.PIPE)
-		output, error = process.communicate()
-		return output, error
+	def run_cpu(self, job_name, output):
+		return self.run(CPU_TEMPLATE, "cpu", job_name, output)
+
+	def run_gpu(self, job_name, output):
+		return self.run(GPU_TEMPLATE, "gpu", job_name, output)
 
 	def get_args(self, hardware):
 		raise Exception("Unsupported function 'get_args' for class JOB")
@@ -61,61 +81,33 @@ class GoogleNetJob(Job):
 
 class AlexNetJob(Job):
 	def get_args(self, hardware):
-		if hardware is "cpu":
+		if hardware == "cpu":
 			return ["jobs/AlexNet/run.sh", str(self.epochs), "--cpu", "--numThreads", str(self.thread_count)]
 		return ["jobs/AlexNet/run.sh", str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
 
 class LeNetJob(Job):
 	def get_args(self, hardware):
-		if hardware is "cpu":
+		if hardware == "cpu":
 			return ["jobs/LeNet/run.sh", str(self.epochs), "--cpu", "--numThreads", str(self.thread_count)]
 		return ["jobs/LeNet/run.sh", str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
 
-# job: the job whose CPU and GPU time should be estimated
+# output: the output of the job whose CPU and GPU time should be estimated
 # a: the lower percent to use for the estimaton
 # b: the upper percent to use for the estimation
-def estimate_job_time_linreg(job, a, b):
-	original_epochs = job.epochs
-	job.epochs = round(job.epochs * a)
+def estimate_job_time_linreg(output, a, b):
+	measurements = time_writter.parse_output(output)
+	
+	estimated_cpu_time = 0
+	estimated_gpu_time = 0
 
-	###################################
-	#####    ESTIMATE JOB TIME    #####
-	###################################
-	cpu_estimated = float('inf')
-	gpu_estimated = float('inf')
+	return (estimated_cpu_time, estimated_gpu_time)
 
-	job.epochs = original_epochs
-	job.cpu_compl_time = cpu_estimated
-	job.gpu_compl_time = gpu_estimated
-	job.cpu_err = 0.1
-	job.gpu_err = 0.1
-
-# job: the job whose CPU and GPU time should be estimated
+# job: the output of the job whose CPU and GPU time should be estimated
 # prop: the proportion of epochs to run for
-def estimate_job_time_writter(job, prop):
-	original_epochs = job.epochs
-	job.epochs = round(original_epochs * prop)
+def estimate_job_time_writter(output, prop):
+	measurements = time_writter.parse_output(output)
+	
+	estimated_cpu_time = 0
+	estimated_gpu_time = 0
 
-	times = []
-	for _ in range(self.num_samples):
-		output, error = jopCopy.run_cpu()
-		measurements = time_writter.parse_output(output)
-		times.append(sum(measurements))
-		
-	avgTime = sum(times) / len(times)
-	cpu_estimated = avgTime / a * original_epochs
-
-	times = []
-	for _ in range(self.num_samples):
-		output, error = jopCopy.run_gpu()
-		measurements = time_writter.parse_output(output)
-		times.append(sum(measurements))
-		
-	avgTime = sum(times) / len(times)
-	gpu_estimated = avgTime / a * original_epochs
-
-	job.epochs = original_epochs
-	job.cpu_compl_time = cpu_estimated
-	job.gpu_compl_time = gpu_estimated
-	job.cpu_err = 0.1
-	job.gpu_err = 0.1
+	return (estimated_cpu_time, estimated_gpu_time)
