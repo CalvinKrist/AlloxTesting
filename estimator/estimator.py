@@ -3,8 +3,7 @@ import time_writter
 
 class Job:
 	JOB_ID = 0
-	def __init__(self, name, epochs):
-		self.name = name
+	def __init__(self, epochs):
 		self.epochs = epochs
 		self.args = []
 
@@ -24,17 +23,17 @@ class Job:
 		self.gpu_compl_time = float('inf')
 		self.gpu_err = 1.0
 
-	def run(self):
-		process = subprocess.Popen(self.get_args(), stdout=subprocess.PIPE)
-		print("Running job " + self.name)
+	def run_cpu(self):
+		process = subprocess.Popen(self.get_args("cpu"), stdout=subprocess.PIPE)
 		output, error = process.communicate()
-		print(self.name + " executed: \n\toutput: " + str(output) + "\n\terror: " + str(error))
 		return output, error
 
-	def copy(self):
-		raise Exception("Unsupported function 'copy' for class JOB")
+	def run_gpu(self):
+		process = subprocess.Popen(self.get_args("gpu"), stdout=subprocess.PIPE)
+		output, error = process.communicate()
+		return output, error
 
-	def get_args(self):
+	def get_args(self, hardware):
 		raise Exception("Unsupported function 'get_args' for class JOB")
 
 
@@ -47,39 +46,64 @@ class Job:
 		return s
 
 class GoogleNetJob(Job):
-	def __init__(self, name, epochs=10, batch_size=100, learn_rate=0.1, keep_prob=0.5):
-		Job.__init__(self, name, epochs)
+	def __init__(self, epochs=500, batch_size=128, learn_rate=0.001, keep_prob=0.4):
+		Job.__init__(self, epochs)
 		self.batch_size = batch_size
 		self.learn_rate = learn_rate
 		self.keep_prob = keep_prob
 
-	def get_args(self):
-		return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), str(self.epochs)]
+	def get_args(self, hardware):
+		if hardware is "cpu":
+			return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), str(self.epochs),
+			       "--cpu", "--numThreads", str(self.thread_count)]
+		return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), 
+		        str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
 
-	def copy(self):
-		return GoogleNetJob(self.name + " copy", self.epochs, self.batch_size, self.learn_rate, self.keep_prob)
+# job: the job whose CPU and GPU time should be estimated
+# a: the lower percent to use for the estimaton
+# b: the upper percent to use for the estimation
+def estimate_job_time_linreg(job, a, b):
+	original_epochs = job.epochs
+	job.epochs = round(job.epochs * a)
 
-class Estimator:
-	def __init__(self, num_samples, num_epochs):
-		self.num_samples = num_samples
-		self.num_epochs = num_epochs
+	###################################
+	#####    ESTIMATE JOB TIME    #####
+	###################################
+	cpu_estimated = float('inf')
+	gpu_estimated = float('inf')
 
-	def estimate_job_time(self, job):
-		# Copy the job and change its parameters to estimation parameters
-		jopCopy = job.copy()
-		jopCopy.epochs = self.num_epochs
+	job.epochs = original_epochs
+	job.cpu_compl_time = cpu_estimated
+	job.gpu_compl_time = gpu_estimated
+	job.cpu_err = 0.1
+	job.gpu_err = 0.1
 
-		times = []
+# job: the job whose CPU and GPU time should be estimated
+# num_epochs: the number of epochs to run the estimation job for
+def estimate_job_time_time_writter(job, num_epochs):
+	original_epochs = job.epochs
+	job.epochs = num_epochs
 
-		for _ in range(self.num_samples):
-			output, error = jopCopy.run()
-			measurements = time_writter.parse_output(output)
-			times.append(sum(measurements))
-			
-		avgTime = sum(times) / len(times)
-		print("Average time : " + str(avgTime) + " over " + str(self.num_epochs) + " epochs.")
-		estimated = avgTime / self.num_epochs * job.epochs
-		print("Estimated time : " + str(estimated) + " over " + str(job.epochs) + " epochs.")
+	times = []
+	for _ in range(self.num_samples):
+		output, error = jopCopy.run_cpu()
+		measurements = time_writter.parse_output(output)
+		times.append(sum(measurements))
+		
+	avgTime = sum(times) / len(times)
+	cpu_estimated = avgTime / a * original_epochs
 
-		job.cpu_compl_time = estimated
-		job.cpu_err = 0.1
+	times = []
+	for _ in range(self.num_samples):
+		output, error = jopCopy.run_gpu()
+		measurements = time_writter.parse_output(output)
+		times.append(sum(measurements))
+		
+	avgTime = sum(times) / len(times)
+	gpu_estimated = avgTime / a * original_epochs
+
+	job.epochs = original_epochs
+	job.cpu_compl_time = cpu_estimated
+	job.gpu_compl_time = gpu_estimated
+	job.cpu_err = 0.1
+	job.gpu_err = 0.1
