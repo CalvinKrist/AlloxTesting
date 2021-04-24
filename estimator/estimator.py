@@ -37,7 +37,6 @@ class Job:
 
 		f = template + "\nsrun ./" + ' '.join(self.get_args(hardware))
 		f = f.replace("<NAME>", job_name)
-		f = f.replace("<THREADS>", str(self.thread_count))
 		f = f.replace("<OUTPUT>", output)
 
 		with open('slurm_scripts/' + job_name, "w") as slurm:
