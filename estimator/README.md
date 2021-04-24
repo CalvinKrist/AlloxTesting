@@ -50,3 +50,9 @@ Thus, by using the `time_writter` module as described in [Adding a new Job](#add
 `<TIME_WRITTER_OUTPUT>[13.973396399989724, 8.200004231184721e-06, 2.094237900004373]</TIME_WRITTER_OUTPUT>`
 
 Assuming a batch / epoch-based job, this shows that initial construction of the model and loading of TensorFlow took about 14 seconds, then a single epoch took 8.2e-06 seconds, and then saving the model to a file took about 2 seconds. Passing the output of the job (including the above string) to `time_writter.parse_output(output)` will return the float list of `[13.973396399989724, 8.200004231184721e-06, 2.094237900004373]`, which can then be summed to find the total job time or analyzed using knowledge of the job structure for a more accurate analysis. For example, summing the first and last elements of the list gives a y intercept and the remaining elements will give the slope. 
+
+### Job Hardware Support
+
+The `run.sh` of a job can be used to control the hardware it is run on. You can run it on the gpu with `--gpu --numGPUs NUM_GPUS` at the end of the normmal `run.sh` command, or you can run it on the cpu with `--cpu --numThreads NUM_THREADS` in the same way. 
+
+Different from AlloX, we do not support configuring CPU or GPU memory constriants. This is because Tensorfloe 1.15, the version needed for all the machine learning jobs, does not support limiting the memory for the CPU, although it does allow this for the GPU. Additionally, we do not support running on multiple CPUs because to do so in any meaningful way requires a parameter server.
