@@ -113,7 +113,7 @@ def train():
     else:
         raise Exception("Hardware not specified!")
 
-    with open("../../../results/" + os.environ['SLURM_JOB_NAME'], "w") as f:
+    with open("../../../" + os.environ['JOB_NAME'], "w") as f:
         f.write("Starting experiment.")
         f.flush()
         with tf.Session(config=config) as sess:

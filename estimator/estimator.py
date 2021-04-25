@@ -36,7 +36,7 @@ class Job:
 		if not os.path.exists('slurm_scripts'):
 			os.makedirs('slurm_scripts')
 
-		f = "git pull; ./" + ' '.join(self.get_args(hardware))
+		f = "export JOB_NAME=" + output + "; git pull; ./" + ' '.join(self.get_args(hardware))
 
 		with open('slurm_scripts/' + job_name, "w") as slurm:
 			slurm.write(f)

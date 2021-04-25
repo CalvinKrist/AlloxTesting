@@ -47,13 +47,13 @@ def main():
     saver = tf.train.Saver()
     sess.run(tf.initialize_all_variables())
 
-    with open("../../results/" + os.environ['JOB_NAME'], "w") as f:
+    with open("../../" + os.environ['JOB_NAME'], "w") as f:
         f.write("Starting experiment.")
         print("Starting experiments.")
         f.flush()
         for i in range(max_iter):
             time_writter.LogUpdate()
-            if i % 500 == 0:
+            if i % 1000 == 0:
                 print("Epoch " + str(i) + " completed.")
                 print(time_writter.GetResults())
                 f.write(time_writter.GetResults() + "\n")
