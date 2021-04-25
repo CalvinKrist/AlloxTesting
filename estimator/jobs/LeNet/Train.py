@@ -49,10 +49,13 @@ def main():
 
     with open("../../../results/" + os.environ['SLURM_JOB_NAME'], "w") as f:
         f.write("Starting experiment.")
+        print("Starting experiments.")
         f.flush()
         for i in range(max_iter):
             time_writter.LogUpdate()
-            if i % 1000 == 0:
+            if i % 500 == 0:
+                print("Epoch " + str(i) + " completed.")
+                print(time_writter.GetResults())
                 f.write(time_writter.GetResults() + "\n")
                 f.flush()
 
@@ -63,6 +66,7 @@ def main():
         save_path = saver.save(sess, parameter_path)
 
         time_writter.LogUpdate()
+        print(time_writter.GetResults())
         f.write(time_writter.GetResults())
 
 if __name__ == '__main__':
