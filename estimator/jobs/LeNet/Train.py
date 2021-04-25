@@ -47,7 +47,7 @@ def main():
     saver = tf.train.Saver()
     sess.run(tf.initialize_all_variables())
 
-    with open("../../../results/" + os.environ['SLURM_JOB_NAME'], "w") as f:
+    with open("../../results/" + os.environ['JOB_NAME'], "w") as f:
         f.write("Starting experiment.")
         print("Starting experiments.")
         f.flush()

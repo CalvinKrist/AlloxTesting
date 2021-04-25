@@ -52,7 +52,7 @@ else:
     config.gpu_options.visible_device_list=visible_gpus[:-1] # remove last comma
     print("Using GPU")
 
-with open("../../../results/" + os.environ['SLURM_JOB_NAME'], "w") as f:
+with open("../../results/" + os.environ['JOB_NAME'], "w") as f:
     with tf.Session(config=config) as sess:
 
         file_writer = tf.summary.FileWriter(logdir='./log', graph=sess.graph)
