@@ -7,3 +7,5 @@
 #SBATCH --exclusive
 #SBATCH --output=<OUTPUT>
 #SBATCH --requeue
+
+set -x

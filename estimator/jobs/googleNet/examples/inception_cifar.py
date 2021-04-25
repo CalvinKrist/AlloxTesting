@@ -121,10 +121,13 @@ def train():
         for epoch_id in range(FLAGS.maxepoch):
             time_writter.LogUpdate()
             # train one epoch
-            trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob, summary_writer=writer)
-            # test the model on validation set after each epoch
-            trainer.valid_epoch(sess, dataflow=valid_data, summary_writer=writer)
-            saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
+            trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
+
+            if epoch_id % 50 == 0:
+                # test the model on validation set after each epoch
+                trainer.valid_epoch(sess, dataflow=valid_data)
+                saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
+            print("Epoch " + str(epoch_id) + " done.")
         time_writter.LogUpdate()
         saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
         writer.close()

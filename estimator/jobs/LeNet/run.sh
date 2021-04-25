@@ -19,4 +19,4 @@ BATCH_SIZE =50
 PARAMETER_FILE = \"checkpoint/variable.ckpt\"
 MAX_ITER = $1" > config.py
 
-python3.7 Train.py $2 $3 $4
+python3.6 Train.py $2 $3 $4

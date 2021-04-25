@@ -12,11 +12,11 @@ def calc_baselines():
 
 		if "--cpu" in sys.argv:
 			googleNet.run_cpu("googleNet_CPU_" + str(i), "results/baselines/googleNet_CPUbaseline_" + str(i))
-			alexNet.run_cpu("alexNet_GPU_" + str(i), "results/baselines/alexNet_GPUbaseline_" + str(i))
+			alexNet.run_cpu("alexNet_CPU_" + str(i), "results/baselines/alexNet_CPUbaseline_" + str(i))
 			leNet.run_cpu("leNet_CPU_" + str(i), "results/baselines/leNet_CPUbaseline_" + str(i))
 
 		if "--gpu" in sys.argv:
-			alexNet.run_gpu("alexNet_CPU_" + str(i), "results/baselines/alexNet_CPUbaseline_" + str(i))
+			alexNet.run_gpu("alexNet_GPU_" + str(i), "results/baselines/alexNet_GPUbaseline_" + str(i))
 			googleNet.run_gpu("googleNet_GPU_" + str(i), "results/baselines/googleNet_GPUbaseline_" + str(i))
 			leNet.run_gpu("leNet_GPU_" + str(i), "results/baselines/leNet_GPUbaseline_" + str(i))
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 	if not os.path.exists('results/baselines'):
 		os.makedirs('results/baselines')
 
-	if "--baselines" in sys.argv:
+	if "--baselines" in sys.argv or "--baseline" in sys.argv:
 		calc_baselines()
 
 	###############################
