@@ -113,7 +113,6 @@ def train():
     else:
         raise Exception("Hardware not specified!")
 
-    out_file_name = 
     with open(os.environ['SLURM_JOB_NAME'], "w") as f:
         with tf.Session(config=config) as sess:
             writer = tf.summary.FileWriter(FLAGS.savePath)
@@ -131,7 +130,7 @@ def train():
                     # test the model on validation set after each epoch
                     trainer.valid_epoch(sess, dataflow=valid_data)
                     saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
-                    
+
             time_writter.LogUpdate()
             saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
             writer.close()
