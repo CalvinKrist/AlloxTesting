@@ -113,27 +113,31 @@ def train():
     else:
         raise Exception("Hardware not specified!")
 
-    with tf.Session(config=config) as sess:
-        writer = tf.summary.FileWriter(FLAGS.savePath)
-        saver = tf.train.Saver()
-        sess.run(tf.global_variables_initializer())
-        writer.add_graph(sess.graph)
-        for epoch_id in range(FLAGS.maxepoch):
+    out_file_name = 
+    with open(os.environ['SLURM_JOB_NAME'], "w") as f:
+        with tf.Session(config=config) as sess:
+            writer = tf.summary.FileWriter(FLAGS.savePath)
+            saver = tf.train.Saver()
+            sess.run(tf.global_variables_initializer())
+            writer.add_graph(sess.graph)
+            for epoch_id in range(FLAGS.maxepoch):
+                f.write("Starting epoch " + str(epoch_id) + "\n")
+
+                time_writter.LogUpdate()
+                # train one epoch
+                trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
+
+                if epoch_id % 50 == 0:
+                    # test the model on validation set after each epoch
+                    trainer.valid_epoch(sess, dataflow=valid_data)
+                    saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
+                    
             time_writter.LogUpdate()
-            # train one epoch
-            trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
+            saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
+            writer.close()
 
-            if epoch_id % 50 == 0:
-                # test the model on validation set after each epoch
-                trainer.valid_epoch(sess, dataflow=valid_data)
-                saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
-            print("Epoch " + str(epoch_id) + " done.")
-        time_writter.LogUpdate()
-        saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
-        writer.close()
-
-        time_writter.LogUpdate()
-        time_writter.PrintResults()
+            time_writter.LogUpdate()
+            time_writter.PrintResults()
 
 
 def evaluate():
