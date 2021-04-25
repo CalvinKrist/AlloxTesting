@@ -113,30 +113,30 @@ def train():
     else:
         raise Exception("Hardware not specified!")
 
-    with open(os.environ['SLURM_JOB_NAME'], "w") as f:
+    with open("../../../results/" + os.environ['SLURM_JOB_NAME'], "w") as f:
+        f.write("Starting experiment.")
+        f.flush()
         with tf.Session(config=config) as sess:
-            writer = tf.summary.FileWriter(FLAGS.savePath)
-            saver = tf.train.Saver()
+            #writer = tf.summary.FileWriter(FLAGS.savePath)
+            #writer.add_graph(sess.graph)
             sess.run(tf.global_variables_initializer())
-            writer.add_graph(sess.graph)
             for epoch_id in range(FLAGS.maxepoch):
-                f.write("Starting epoch " + str(epoch_id) + "\n")
-
                 time_writter.LogUpdate()
+                f.write(time_writter.GetResults() + "\n")
+                f.flush()
+                
                 # train one epoch
                 trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
 
-                if epoch_id % 50 == 0:
-                    # test the model on validation set after each epoch
-                    trainer.valid_epoch(sess, dataflow=valid_data)
-                    saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
-
             time_writter.LogUpdate()
+            f.write("Saving model...")
+            f.flush()
+            saver = tf.train.Saver()
             saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
-            writer.close()
+            #writer.close()
 
             time_writter.LogUpdate()
-            time_writter.PrintResults()
+            f.write(time_writter.GetResults())
 
 
 def evaluate():

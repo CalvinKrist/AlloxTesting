@@ -47,20 +47,23 @@ def main():
     saver = tf.train.Saver()
     sess.run(tf.initialize_all_variables())
 
-    for i in range(max_iter):
-        time_writter.LogUpdate()
-        batch = mnist.train.next_batch(batch_size)
-        if i % 100 == 0:
-            train_accuracy = sess.run(lenet.train_accuracy,feed_dict={
-                lenet.raw_input_image: batch[0],lenet.raw_input_label: batch[1]
-            })
-            print("step %d, training accuracy %g" % (i, train_accuracy))
-        sess.run(lenet.train_op,feed_dict={lenet.raw_input_image: batch[0],lenet.raw_input_label: batch[1]})
-    time_writter.LogUpdate()
-    save_path = saver.save(sess, parameter_path)
+    with open("../../../results/" + os.environ['SLURM_JOB_NAME'], "w") as f:
+        f.write("Starting experiment.")
+        f.flush()
+        for i in range(max_iter):
+            time_writter.LogUpdate()
+            if i % 1000 == 0:
+                f.write(time_writter.GetResults() + "\n")
+                f.flush()
 
-    time_writter.LogUpdate()
-    time_writter.PrintResults()
+            batch = mnist.train.next_batch(batch_size)
+            sess.run(lenet.train_op,feed_dict={lenet.raw_input_image: batch[0],lenet.raw_input_label: batch[1]})
+
+        time_writter.LogUpdate()
+        save_path = saver.save(sess, parameter_path)
+
+        time_writter.LogUpdate()
+        f.write(time_writter.GetResults())
 
 if __name__ == '__main__':
     main()

@@ -52,46 +52,35 @@ else:
     config.gpu_options.visible_device_list=visible_gpus[:-1] # remove last comma
     print("Using GPU")
 
-with tf.Session(config=config) as sess:
-    print('Training dataset...')
-    print()
+with open("../../../results/" + os.environ['SLURM_JOB_NAME'], "w") as f:
+    with tf.Session(config=config) as sess:
 
-    file_writer = tf.summary.FileWriter(logdir='./log', graph=sess.graph)
+        file_writer = tf.summary.FileWriter(logdir='./log', graph=sess.graph)
 
-    summary_operation = tf.summary.merge_all()
+        summary_operation = tf.summary.merge_all()
 
-    sess.run(tf.global_variables_initializer())
+        sess.run(tf.global_variables_initializer())
 
-    for i in range(EPOCHS):
+        for i in range(EPOCHS):
+            time_writter.LogUpdate()
+            f.write(time_writter.GetResults() + "\n")
+            f.flush()
+
+            alexnet.train_epoch(sess, X_train, Y_train, BATCH_SIZE, file_writer, summary_operation, i)
+
         time_writter.LogUpdate()
+        final_train_accuracy = alexnet.evaluate(sess, X_train, Y_train, BATCH_SIZE)
+        final_test_accuracy = alexnet.evaluate(sess, X_test, Y_test, BATCH_SIZE)
 
-        if i  % 50 == 0:
-            print('Calculating accuracies...')
-            
-            train_accuracy = alexnet.evaluate(sess, X_train, Y_train, BATCH_SIZE)
-            test_accuracy = alexnet.evaluate(sess, X_test, Y_test, BATCH_SIZE)
-
-            print('Train Accuracy = {:.3f}'.format(train_accuracy))
-            print('Test Accuracy = {:.3f}'.format(test_accuracy))
-            print()
-
-        print('Training epoch', i + 1, '...')
-        alexnet.train_epoch(sess, X_train, Y_train, BATCH_SIZE, file_writer, summary_operation, i)
+        print('Final Train Accuracy = {:.3f}'.format(final_train_accuracy))
+        print('Final Test Accuracy = {:.3f}'.format(final_test_accuracy))
         print()
 
-    time_writter.LogUpdate()
-    final_train_accuracy = alexnet.evaluate(sess, X_train, Y_train, BATCH_SIZE)
-    final_test_accuracy = alexnet.evaluate(sess, X_test, Y_test, BATCH_SIZE)
-
-    print('Final Train Accuracy = {:.3f}'.format(final_train_accuracy))
-    print('Final Test Accuracy = {:.3f}'.format(final_test_accuracy))
-    print()
-
-    alexnet.save(sess, './model/alexnet')
-    print('Model saved.')
-    print()
+        alexnet.save(sess, './model/alexnet')
+        print('Model saved.')
+        print()
 
 print('Training done successfully.')
 
 time_writter.LogUpdate()
-time_writter.PrintResults()
+f.write(time_writter.GetResults())

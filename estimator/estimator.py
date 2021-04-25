@@ -22,7 +22,7 @@ class Job:
 		self.user = 1
 
 		self.mem = 15
-		self.thread_count = 16
+		self.thread_count = 10
 		self.cpu_compl_time = float('inf')
 		self.cpu_err = 1.0
 
@@ -31,6 +31,7 @@ class Job:
 		self.gpu_compl_time = float('inf')
 		self.gpu_err = 1.0
 
+	# This no longer runs anything, but not creates a slurm script that can be run later
 	def run(self, template, hardware, job_name, output):
 		if not os.path.exists('slurm_scripts'):
 			os.makedirs('slurm_scripts')
@@ -42,15 +43,11 @@ class Job:
 		with open('slurm_scripts/' + job_name, "w") as slurm:
 			slurm.write(f)
 
-		process = subprocess.Popen(['sbatch', 'slurm_scripts/' + job_name], stdout=subprocess.PIPE)
-		output, error = process.communicate()
-		return output, error
-
 	def run_cpu(self, job_name, output):
-		return self.run(CPU_TEMPLATE, "cpu", job_name, output)
+		self.run(CPU_TEMPLATE, "cpu", job_name, output)
 
 	def run_gpu(self, job_name, output):
-		return self.run(GPU_TEMPLATE, "gpu", job_name, output)
+		self.run(GPU_TEMPLATE, "gpu", job_name, output)
 
 	def get_args(self, hardware):
 		raise Exception("Unsupported function 'get_args' for class JOB")
