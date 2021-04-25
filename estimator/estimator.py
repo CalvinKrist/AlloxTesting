@@ -36,9 +36,7 @@ class Job:
 		if not os.path.exists('slurm_scripts'):
 			os.makedirs('slurm_scripts')
 
-		f = template + "\nsrun ./" + ' '.join(self.get_args(hardware))
-		f = f.replace("<NAME>", job_name)
-		f = f.replace("<OUTPUT>", output)
+		f = "git pull; ./" + ' '.join(self.get_args(hardware))
 
 		with open('slurm_scripts/' + job_name, "w") as slurm:
 			slurm.write(f)
