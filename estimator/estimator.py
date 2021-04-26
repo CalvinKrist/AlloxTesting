@@ -105,11 +105,13 @@ def estimate_job_time(tw_cpu_output):
 			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.2, 1.3, epochs)
 	if timeWritter:
 		if config_num==0:
-				cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 1, epochs)
+			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.002, epochs)
+		if config_num==1:
+			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.004, epochs)
 		if config_num==2:
-			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 4, epochs)
+			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.008, epochs)
 		if config_num==3:
-			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 7, epochs)
+			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.014, epochs)
 	return cpu_estimated
 		
 
@@ -117,18 +119,6 @@ def estimate_job_time(tw_cpu_output):
 # a: the lower percent to use for the estimaton
 # b: the upper percent to use for the estimation
 def estimate_job_time_linreg(tw_cpu_output, a, b, num_epochs):
-
-	a_epochs = round(original_epochs * a)
-	b_epochs = round(original_epochs * b)
-
-
-	# TODO parse csv to extract times at a% and b% epochs
-	output=[]
-	with open(tw_cpu_output) as csv_file:
-		csv_reader = csv.reader(csv_file, delimiter=',')
-	a_time = 0.0
-	b_time = 0.0
-
 	###################################
 	#####    ESTIMATE JOB TIME    #####
 	###################################
@@ -138,62 +128,51 @@ def estimate_job_time_linreg(tw_cpu_output, a, b, num_epochs):
 	#   train for job.epochs amount. The independent variable is the 
 	#   number of epochs, and the dependent variable is the job 
 	#   completion time at job.epochs amount. 
+
+	a_epochs = round(num_epochs * a)
+	b_epochs = round(num_epochs * b)
+
+	with open(tw_cpu_output, "r") as f:
+		lines = f.read()
+		# omit the first and last loading/writing values
+		epoch_times = time_writter.parse_output(lines)[1:-1]
+
+	a_time = epoch_times[a_epochs]
+	b_time = epoch_times[b_epochs]
+
 	cpu_estimated = float('inf')
-	gpu_estimated = float('inf')
 
 	X_cpu = np.array([a_epochs, b_epochs]).reshape(2,1)
 	y_cpu = [a_time, b_time]
 	reg = LinearRegression().fit(X_cpu, y_cpu)
-    # print("Regression score: ", reg.score(X, y), " Coefficient: ", reg.coef_, " Intercept: ", reg.intercept_)
-	cpu_estimated = reg.predict([[original_epochs]])
-
-	# job.epochs = original_epochs
-
-	# job.cpu_compl_time = cpu_estimated[0]
-	# job.gpu_compl_time = gpu_estimated
-
-	# job.cpu_err = 0.1
-	# job.gpu_err = 0.1
+	cpu_estimated = reg.predict([[original_epochs]])[0]
 
 	return cpu_estimated
 
 # job: the job whose CPU and GPU time should be estimated
 # num_epochs: the number of epochs to run the estimation job for
 def estimate_job_time_time_writter(tw_cpu_output, proportion, num_epochs):
-	# original_epochs = job.epochs
-	# job.epochs = num_epochs
 
 	###################################
 	#####    ESTIMATE JOB TIME    #####
 	###################################
 
-	# We want to use the list of times to build a linear regression 
-	#   model to predict the entire job completion time. i.e. if we 
-	#   train for job.epochs amount. The independent variable is the 
-	#   number of epochs, and the dependent variable is the job 
-	#   completion time at job.epochs amount. 
 	cpu_estimated = float('inf')
 	# gpu_estimated = float('inf')
 
+	proportion_epoch = round(num_epochs * proportion)
 
-	# TODO parse csv to find time at proportion epoch and first epoch
-	proportion_epoch = 0
-	output=[]
-	with open(tw_cpu_output) as csv_file:
-		csv_reader = csv.reader(csv_file, delimiter=',')
-	first_epoch_time = 0.0
-	proportion_epoch_time = 0.0
+	with open(tw_cpu_output, "r") as f:
+		lines = f.read()
+		# omit the first and last loading/writing values
+		epoch_times = time_writter.parse_output(lines)[1:-1]
+	first_epoch_time = epoch_times[0]
+	proportion_epoch_time = epoch_times[proportion_epoch]
 
-	X_cpu = np.array([1, original_epochs]).reshape(2,1)
-	y_cpu = [first_epoch, last_epoch_time]
+	X_cpu = np.array([1, proportion_epochs]).reshape(2,1)
+	y_cpu = [first_epoch_time, proportion_epoch_time]
+
 	reg = LinearRegression().fit(X_cpu, y_cpu)
-    # print("Regression score: ", reg.score(X, y), " Coefficient: ", reg.coef_, " Intercept: ", reg.intercept_)
-	cpu_estimated = reg.predict([[last_epoch_time]])
+	cpu_estimated = reg.predict([[last_epoch_time]])[0]
 
-	# job.epochs = original_epochs
-	# job.cpu_compl_time = cpu_estimated[0]
-	# job.gpu_compl_time = gpu_estimated
-	# job.cpu_err = 0.1
-	# job.gpu_err = 0.1
-
-	return cpu_estiamted
+	return cpu_estimated
