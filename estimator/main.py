@@ -56,6 +56,7 @@ def calc_baselines():
 					leNet.run_gpu("leNet_GPU_" + str(i), "results/baselines/leNet_GPUbaseline_" + str(i))
 
 if __name__ == '__main__':
+	pppp
 	##############################################
 	####    Get baselines and save to JSON    ####
 	##############################################
@@ -131,7 +132,7 @@ if __name__ == '__main__':
 							job = job_class(epochs=round(500*config[1]))
 						else:
 							job = job_class(epochs=round(500*config))
-								
+
 					if "--cpu" in sys.argv:
 						job.run_cpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(useJobId), file_path + "/cpu" + str(jobId))
 					if "--gpu" in sys.argv:
