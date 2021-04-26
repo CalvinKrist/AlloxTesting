@@ -48,7 +48,7 @@ def get_args():
     parser.add_argument('--maxepoch', type=int, default=100,
                         help='Max number of epochs for training')
 
-    parser.add_argument('--cifarPath', type=str, default="../../../data/cifar-10-batches-py",
+    parser.add_argument('--cifarPath', type=str, default="../../AlexNet/cifar-10-batches-py",
                         help='Location of CIFAR dataset')
     parser.add_argument('--savePath', type=str, default=".",
                         help='Where to save model')
