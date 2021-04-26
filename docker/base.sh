@@ -2,4 +2,5 @@
 set -ex;
 
 cd alloxtesting/estimator
-python3 "$@"
+git pull
+python3 main.py "$@"
