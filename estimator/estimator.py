@@ -123,29 +123,25 @@ def estimate_job_time_linreg(tw_cpu_output, a, b, num_epochs):
 	#####    ESTIMATE JOB TIME    #####
 	###################################
 
-	# We want to use the list of times to build a linear regression 
-	#   model to predict the entire job completion time. i.e. if we 
-	#   train for job.epochs amount. The independent variable is the 
-	#   number of epochs, and the dependent variable is the job 
-	#   completion time at job.epochs amount. 
-
+	# Using a and b proportions, find corresponding epoch number
 	a_epochs = round(num_epochs * a)
 	b_epochs = round(num_epochs * b)
+	cpu_estimated = float('inf')
 
 	with open(tw_cpu_output, "r") as f:
 		lines = f.read()
 		# omit the first and last loading/writing values
 		epoch_times = time_writter.parse_output(lines)[1:-1]
 
-	a_time = epoch_times[a_epochs]
-	b_time = epoch_times[b_epochs]
+	# Get corresponding time at each proportioned epoch (sum all previous times)
+	a_time = sum(epoch_times[:a_epochs+1])
+	b_time = sum(epoch_times[:b_epochs+1])
 
-	cpu_estimated = float('inf')
-
+	# Perform linear regression IV: num_epochs, DV: time taken at epoch
 	X_cpu = np.array([a_epochs, b_epochs]).reshape(2,1)
 	y_cpu = [a_time, b_time]
 	reg = LinearRegression().fit(X_cpu, y_cpu)
-	cpu_estimated = reg.predict([[original_epochs]])[0]
+	cpu_estimated = reg.predict([[num_epochs]])[0]
 
 	return cpu_estimated
 
@@ -158,21 +154,23 @@ def estimate_job_time_time_writter(tw_cpu_output, proportion, num_epochs):
 	###################################
 
 	cpu_estimated = float('inf')
-	# gpu_estimated = float('inf')
-
+	# Get epoch at proportioned value
 	proportion_epoch = round(num_epochs * proportion)
 
 	with open(tw_cpu_output, "r") as f:
 		lines = f.read()
 		# omit the first and last loading/writing values
 		epoch_times = time_writter.parse_output(lines)[1:-1]
-	first_epoch_time = epoch_times[0]
-	proportion_epoch_time = epoch_times[proportion_epoch]
 
+	# Get times at first epoch and proportioned epoch
+	first_epoch_time = epoch_times[0]
+	proportion_epoch_time = sum(epoch_times[:proportion_epoch+1])
+
+	# Perform linear fit to get predicted time at total epochs
 	X_cpu = np.array([1, proportion_epochs]).reshape(2,1)
 	y_cpu = [first_epoch_time, proportion_epoch_time]
 
 	reg = LinearRegression().fit(X_cpu, y_cpu)
-	cpu_estimated = reg.predict([[last_epoch_time]])[0]
+	cpu_estimated = reg.predict([[num_epochs]])[0]
 
 	return cpu_estimated
