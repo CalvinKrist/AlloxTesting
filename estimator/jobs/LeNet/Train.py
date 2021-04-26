@@ -62,8 +62,10 @@ def main():
 
     time_writter.LogUpdate()
     print(time_writter.GetResults())
+    print("job completed.")
 
 if __name__ == '__main__':
+    print("STARTING APPLICATION")
     main()
 
 

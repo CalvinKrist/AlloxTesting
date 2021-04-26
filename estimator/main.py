@@ -60,6 +60,8 @@ if __name__ == '__main__':
 	####    Get baselines and save to JSON    ####
 	##############################################
 
+	print("<ARGS>" + str(sys.argv) + "</ARGS>")
+
 	if not os.path.exists('results'):
 		os.makedirs('results')
 	if not os.path.exists('results/baselines'):
@@ -95,6 +97,16 @@ if __name__ == '__main__':
 			if not os.path.exists('results/' + estimation_name + '/' + job_type):
 				os.makedirs('results/' + estimation_name + '/' + job_type)
 
+			configId = -1
+			useConfigId = False
+			for arg in sys.argv:
+				if "--config=" in arg:
+					useConfigId = True
+					configId = int(arg.split("=")[1])
+
+			if useConfigId:
+				configurations[estimation_name] = [configurations[estimation_name][configId]]
+
 			for i, config in enumerate(configurations[estimation_name]):
 				if not os.path.exists('results/' + estimation_name + '/' + job_type + "/config_" + str(i)):
 					os.makedirs('results/' + estimation_name +'/' + job_type + "/config_" + str(i))
@@ -110,9 +122,9 @@ if __name__ == '__main__':
 
 				if useJobId:
 					if "--cpu" in sys.argv:
-							job.run_cpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(useJobId), file_path + "/cpu" + str(useJobId))
+						job.run_cpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(useJobId), file_path + "/cpu" + str(jobId))
 					if "--gpu" in sys.argv:
-						job.run_gpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(useJobId), file_path + "/gpu" + str(useJobId))
+						job.run_gpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(useJobId), file_path + "/gpu" + str(jobId))
 				else:
 					for itr in range(100):
 

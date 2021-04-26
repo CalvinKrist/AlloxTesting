@@ -120,6 +120,7 @@ def train():
         sess.run(tf.global_variables_initializer())
         for epoch_id in range(FLAGS.maxepoch):
             time_writter.LogUpdate()
+            print("Epoch " + str(epoch_id) + " completed.")
             print(time_writter.GetResults())
             
             # train one epoch
@@ -132,6 +133,7 @@ def train():
         #writer.close()
 
         print(time_writter.GetResults())
+        print("Job completed.")
 
 
 def evaluate():

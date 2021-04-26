@@ -62,6 +62,7 @@ with tf.Session(config=config) as sess:
 
     for i in range(EPOCHS):
         time_writter.LogUpdate()
+        print("Epoch " + str(i) + " completed.")
         print(time_writter.GetResults())
 
         alexnet.train_epoch(sess, X_train, Y_train, BATCH_SIZE, file_writer, summary_operation, i)
