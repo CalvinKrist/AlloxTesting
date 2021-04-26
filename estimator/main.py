@@ -121,6 +121,17 @@ if __name__ == '__main__':
 						jobId = int(arg.split("=")[1])
 
 				if useJobId:
+					if job_type == "leNet":
+						if estimation_name == "linearRegression":
+							job = job_class(epochs=round(30000*config[1]))
+						else:
+							job = job_class(epochs=round(30000*config))
+					else:
+						if estimation_name == "linearRegression":
+							job = job_class(epochs=round(500*config[1]))
+						else:
+							job = job_class(epochs=round(500*config))
+								
 					if "--cpu" in sys.argv:
 						job.run_cpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(useJobId), file_path + "/cpu" + str(jobId))
 					if "--gpu" in sys.argv:
