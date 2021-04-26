@@ -101,32 +101,34 @@ def train():
     if FLAGS.cpu:
         import os
         os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+        print("Using CPU")
         config=tf.ConfigProto(inter_op_parallelism_threads=FLAGS.numThreads,
                    intra_op_parallelism_threads=FLAGS.numThreads,
                    device_count={'GPU':0, 'CPU':1})
-        print("Using CPU", flush=True)
     elif FLAGS.gpu:
         config=tf.ConfigProto(device_count={'GPU':FLAGS.numGPUs, 'CPU':1})
+        print("Using GPU")
         visible_gpus = ''
         for gpu in range(FLAGS.numGPUs):
             visible_gpus += str(gpu) + ","
         config.gpu_options.visible_device_list=visible_gpus[:-1] # remove last comma
-        print("Using GPU", flush=True)
     else:
         raise Exception("Hardware not specified!")
 
-    print("Starting experiment.", flush=True)
+    print("Starting experiment.")
     with tf.Session(config=config) as sess:
         #writer = tf.summary.FileWriter(FLAGS.savePath)
         #writer.add_graph(sess.graph)
         sess.run(tf.global_variables_initializer())
         for epoch_id in range(FLAGS.maxepoch):
             time_writter.LogUpdate()
-            print("Epoch " + str(epoch_id) + " staarted.", flush=True)
-            print(time_writter.GetResults(), flush=True)
+            print("Epoch " + str(epoch_id) + " started.")
+            print(time_writter.GetResults())
             
             # train one epoch
             trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
+            print(epoch_id)
+            print(FLAGS.maxepoch)
 
         time_writter.LogUpdate()
         print("Saving model...")

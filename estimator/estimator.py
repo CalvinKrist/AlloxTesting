@@ -39,11 +39,7 @@ class Job:
 		with open('slurm_scripts/' + job_name + ".sh", "w") as slurm:
 			slurm.write(f)
 
-		process = subprocess.Popen(["/bin/bash", 'slurm_scripts/' + job_name + ".sh"], stdout=subprocess.PIPE)
-		output, error = process.communicate()
-
-		print(output)
-		print(error)
+		process = subprocess.run(["/bin/bash", 'slurm_scripts/' + job_name + ".sh"])
 
 	def run_cpu(self, job_name, output):
 		self.run("cpu", job_name, output)

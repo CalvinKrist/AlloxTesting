@@ -43,14 +43,14 @@ if use_cpu:
     config=tf.ConfigProto(inter_op_parallelism_threads=hardware_param,
                intra_op_parallelism_threads=hardware_param,
                device_count={'GPU':0, 'CPU':1})
-    print("Using CPU", flush=True)
+    print("Using CPU")
 else:
     config=tf.ConfigProto(device_count={'GPU':hardware_param, 'CPU':1})
     visible_gpus = ''
     for gpu in range(hardware_param):
         visible_gpus += str(gpu) + ","
     config.gpu_options.visible_device_list=visible_gpus[:-1] # remove last comma
-    print("Using GPU", flush=True)
+    print("Using GPU")
 
 with tf.Session(config=config) as sess:
 
@@ -62,8 +62,8 @@ with tf.Session(config=config) as sess:
 
     for i in range(EPOCHS):
         time_writter.LogUpdate()
-        print("Epoch " + str(i) + " started.", flush=True)
-        print(time_writter.GetResults(), flush=True)
+        print("Epoch " + str(i) + " started.")
+        print(time_writter.GetResults())
 
         alexnet.train_epoch(sess, X_train, Y_train, BATCH_SIZE, file_writer, summary_operation, i)
 
