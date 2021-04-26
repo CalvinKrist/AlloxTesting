@@ -65,11 +65,9 @@ class GoogleNetJob(Job):
 def estimate_job_time(tw_cpu_output):
 	with open(tw_cpu_output) as csv_file:
 		csv_reader = csv.reader(csv_file, quoting=csv.QUOTE_NONE)
-		output = []
 		args = []
 		num_epochs = []
 		for row in csv_reader:
-			output.append(row)
 			for field in row:
 				if field.startswith('"<ARGS>'):
 					args.append(row)
@@ -82,6 +80,8 @@ def estimate_job_time(tw_cpu_output):
 		if char not in punctuations:
 			epochs_proc = epochs_proc + char
 	epochs = [int(s) for s in epochs_proc.split() if s.isdigit()][0]
+	print(args)
+	print(epochs)
 	# process args to call either linear regression or timewritter
 	linearReg = False
 	timeWritter = False
@@ -93,6 +93,12 @@ def estimate_job_time(tw_cpu_output):
 			timeWritter = True
 		if "config" in i:
 			config.append(i)
+	
+	if not config:
+		raise Exception("No config value specified in args")
+	if not linearReg and not timeWritter:
+		raise Exception("Linear Regression Estimation or timewritter estimation not specified in args")
+
 	config_num = int(config[0].split("=")[1].split("'")[0])
 	cpu_estimated = float('inf')
 	# Call linear reg estimation or time writter estimation depending on config param
