@@ -15,7 +15,7 @@ class Job:
 		self.user = 1
 
 		self.mem = 15
-		self.thread_count = 16
+		self.thread_count = 8
 		self.cpu_compl_time = float('inf')
 		self.cpu_err = 1.0
 
