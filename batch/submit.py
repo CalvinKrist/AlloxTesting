@@ -5,7 +5,7 @@ import json
 ####    Submit baselines    ####
 ################################
 count = 0
-jobs = ["alexNet", "alexNet"]
+jobs = ["leNet", "alexNet"]
 for job in jobs:
 	for i in range(10):
 		job_name = job + "Baseline" + str(i)
@@ -20,8 +20,8 @@ for job in jobs:
 	for method in methods:
 		for config in range(configCount[method]):
 			for i in range(100):
-				count += 1
-				if methods == "linearRegression" or config != 1:
+				if method == "linearRegression" or config != 1:
+					count += 1
 					job_name = job + "_" + method + "_" + str(config) + "_" + str(i)
 					command = {"command" : ["/base.sh", "--cpu", job, "--id=" + str(i), method, "--config=" + str(config)]}
 					proc = ["aws", "batch", "submit-job", "--job-name", job_name, "--job-queue", "cpu-queue", "--job-definition", "CPUBase", "--container-overrides", json.dumps(command)]
