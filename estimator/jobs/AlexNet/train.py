@@ -29,7 +29,7 @@ spec.loader.exec_module(time_writter)
 
 time_writter.Start()
 
-print('Reading CIFAR-10...')
+print('Reading CIFAR-10...',flush=True)
 X_train, Y_train, X_test, Y_test = read_cifar_10(image_width=INPUT_WIDTH, image_height=INPUT_HEIGHT)
 
 alexnet = AlexNet(input_width=INPUT_WIDTH, input_height=INPUT_HEIGHT, input_channels=INPUT_CHANNELS,
@@ -43,14 +43,14 @@ if use_cpu:
     config=tf.ConfigProto(inter_op_parallelism_threads=hardware_param,
                intra_op_parallelism_threads=hardware_param,
                device_count={'GPU':0, 'CPU':1})
-    print("Using CPU")
+    print("Using CPU", flush=True)
 else:
     config=tf.ConfigProto(device_count={'GPU':hardware_param, 'CPU':1})
     visible_gpus = ''
     for gpu in range(hardware_param):
         visible_gpus += str(gpu) + ","
     config.gpu_options.visible_device_list=visible_gpus[:-1] # remove last comma
-    print("Using GPU")
+    print("Using GPU", flush=True)
 
 with tf.Session(config=config) as sess:
 
@@ -62,8 +62,8 @@ with tf.Session(config=config) as sess:
 
     for i in range(EPOCHS):
         time_writter.LogUpdate()
-        print("Epoch " + str(i) + " completed.")
-        print(time_writter.GetResults())
+        print("Epoch " + str(i) + " started.", flush=True)
+        print(time_writter.GetResults(), flush=True)
 
         alexnet.train_epoch(sess, X_train, Y_train, BATCH_SIZE, file_writer, summary_operation, i)
 

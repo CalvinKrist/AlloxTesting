@@ -48,7 +48,7 @@ def get_args():
     parser.add_argument('--maxepoch', type=int, default=100,
                         help='Max number of epochs for training')
 
-    parser.add_argument('--cifarPath', type=str, default="../../AlexNet/cifar-10-batches-py",
+    parser.add_argument('--cifarPath', type=str, default="../../AlexNet/cifar-10",
                         help='Location of CIFAR dataset')
     parser.add_argument('--savePath', type=str, default=".",
                         help='Where to save model')
@@ -104,24 +104,26 @@ def train():
         config=tf.ConfigProto(inter_op_parallelism_threads=FLAGS.numThreads,
                    intra_op_parallelism_threads=FLAGS.numThreads,
                    device_count={'GPU':0, 'CPU':1})
+        print("Using CPU", flush=True)
     elif FLAGS.gpu:
         config=tf.ConfigProto(device_count={'GPU':FLAGS.numGPUs, 'CPU':1})
         visible_gpus = ''
         for gpu in range(FLAGS.numGPUs):
             visible_gpus += str(gpu) + ","
         config.gpu_options.visible_device_list=visible_gpus[:-1] # remove last comma
+        print("Using GPU", flush=True)
     else:
         raise Exception("Hardware not specified!")
 
-    print("Starting experiment.")
+    print("Starting experiment.", flush=True)
     with tf.Session(config=config) as sess:
         #writer = tf.summary.FileWriter(FLAGS.savePath)
         #writer.add_graph(sess.graph)
         sess.run(tf.global_variables_initializer())
         for epoch_id in range(FLAGS.maxepoch):
             time_writter.LogUpdate()
-            print("Epoch " + str(epoch_id) + " completed.")
-            print(time_writter.GetResults())
+            print("Epoch " + str(epoch_id) + " staarted.", flush=True)
+            print(time_writter.GetResults(), flush=True)
             
             # train one epoch
             trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
