@@ -21,3 +21,4 @@ RUN set -ex; \
 	pip install tensorflow-gpu==1.15; \
 	pip install scikit-image; \
 	pip install pandas==0.24
+COPY base.sh /base.sh

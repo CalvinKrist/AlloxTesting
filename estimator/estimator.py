@@ -2,13 +2,6 @@ import subprocess
 import time_writter
 import os
 
-CPU_TEMPLATE = ""
-with open("cpu_slurm_template.sh") as f:
-	CPU_TEMPLATE = f.read()
-GPU_TEMPLATE = ""
-with open("gpu_slurm_template.sh") as f:
-	GPU_TEMPLATE = f.read()
-
 class Job:
 	JOB_ID = 0
 	def __init__(self, epochs):
@@ -32,20 +25,31 @@ class Job:
 		self.gpu_err = 1.0
 
 	# This no longer runs anything, but not creates a slurm script that can be run later
-	def run(self, template, hardware, job_name, output):
+	def run(self, hardware, job_name, output):
 		if not os.path.exists('slurm_scripts'):
 			os.makedirs('slurm_scripts')
 
-		f = "export JOB_NAME=" + output + "; git pull; ./" + ' '.join(self.get_args(hardware))
+		f = '''
+		#!/bin/bash
+		set -ex
+		git pull
+		'''
+		f += ' '.join(self.get_args(hardware))
 
-		with open('slurm_scripts/' + job_name, "w") as slurm:
+		with open('slurm_scripts/' + job_name + ".sh", "w") as slurm:
 			slurm.write(f)
 
+		process = subprocess.Popen(["/bin/bash", 'slurm_scripts/' + job_name + ".sh"], stdout=subprocess.PIPE)
+		output, error = process.communicate()
+
+		print(output)
+		print(error)
+
 	def run_cpu(self, job_name, output):
-		self.run(CPU_TEMPLATE, "cpu", job_name, output)
+		self.run("cpu", job_name, output)
 
 	def run_gpu(self, job_name, output):
-		self.run(GPU_TEMPLATE, "gpu", job_name, output)
+		self.run("gpu", job_name, output)
 
 	def get_args(self, hardware):
 		raise Exception("Unsupported function 'get_args' for class JOB")

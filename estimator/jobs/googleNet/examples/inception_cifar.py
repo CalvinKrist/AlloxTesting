@@ -113,30 +113,25 @@ def train():
     else:
         raise Exception("Hardware not specified!")
 
-    with open("../../../" + os.environ['JOB_NAME'], "w") as f:
-        f.write("Starting experiment.")
-        f.flush()
-        with tf.Session(config=config) as sess:
-            #writer = tf.summary.FileWriter(FLAGS.savePath)
-            #writer.add_graph(sess.graph)
-            sess.run(tf.global_variables_initializer())
-            for epoch_id in range(FLAGS.maxepoch):
-                time_writter.LogUpdate()
-                f.write(time_writter.GetResults() + "\n")
-                f.flush()
-                
-                # train one epoch
-                trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
-
+    print("Starting experiment.")
+    with tf.Session(config=config) as sess:
+        #writer = tf.summary.FileWriter(FLAGS.savePath)
+        #writer.add_graph(sess.graph)
+        sess.run(tf.global_variables_initializer())
+        for epoch_id in range(FLAGS.maxepoch):
             time_writter.LogUpdate()
-            f.write("Saving model...")
-            f.flush()
-            saver = tf.train.Saver()
-            saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
-            #writer.close()
+            print(time_writter.GetResults())
+            
+            # train one epoch
+            trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
 
-            time_writter.LogUpdate()
-            f.write(time_writter.GetResults())
+        time_writter.LogUpdate()
+        print("Saving model...")
+        saver = tf.train.Saver()
+        saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
+        #writer.close()
+
+        print(time_writter.GetResults())
 
 
 def evaluate():

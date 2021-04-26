@@ -1,10 +1,6 @@
 #!/bin/bash
 set -x
 
-module load python3
-module load cuda-toolkit-10.0
-module load cudnn-7.0.5
-
 source .venv/bin/activate
 cd "$(dirname "$0")"
 

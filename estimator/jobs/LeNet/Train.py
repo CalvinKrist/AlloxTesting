@@ -47,27 +47,21 @@ def main():
     saver = tf.train.Saver()
     sess.run(tf.initialize_all_variables())
 
-    with open("../../" + os.environ['JOB_NAME'], "w") as f:
-        f.write("Starting experiment.")
-        print("Starting experiments.")
-        f.flush()
-        for i in range(max_iter):
-            time_writter.LogUpdate()
-            if i % 1000 == 0:
-                print("Epoch " + str(i) + " completed.")
-                print(time_writter.GetResults())
-                f.write(time_writter.GetResults() + "\n")
-                f.flush()
-
-            batch = mnist.train.next_batch(batch_size)
-            sess.run(lenet.train_op,feed_dict={lenet.raw_input_image: batch[0],lenet.raw_input_label: batch[1]})
-
+    print("Starting experiments.")
+    for i in range(max_iter):
         time_writter.LogUpdate()
-        save_path = saver.save(sess, parameter_path)
+        if i % 2000 == 0:
+            print("Epoch " + str(i) + " completed.")
+            print(time_writter.GetResults())
 
-        time_writter.LogUpdate()
-        print(time_writter.GetResults())
-        f.write(time_writter.GetResults())
+        batch = mnist.train.next_batch(batch_size)
+        sess.run(lenet.train_op,feed_dict={lenet.raw_input_image: batch[0],lenet.raw_input_label: batch[1]})
+
+    time_writter.LogUpdate()
+    save_path = saver.save(sess, parameter_path)
+
+    time_writter.LogUpdate()
+    print(time_writter.GetResults())
 
 if __name__ == '__main__':
     main()

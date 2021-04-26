@@ -4,21 +4,56 @@ import json
 import sys
 
 def calc_baselines():
-	# Run each job in full 10 times, record the runtime
-	for i in range(10):
+	jobId = -1
+	useJobId = False
+	for arg in sys.argv:
+		if "--id=" in arg:
+			useJobId = True
+			jobId = int(arg.split("=")[1])
+
+	if useJobId:
 		googleNet = GoogleNetJob(epochs=500)
 		alexNet = AlexNetJob(epochs=500)
 		leNet = LeNetJob(epochs=30000)
+		i = jobId
 
 		if "--cpu" in sys.argv:
-			googleNet.run_cpu("googleNet_CPU_" + str(i), "results/baselines/googleNet_CPUbaseline_" + str(i))
-			alexNet.run_cpu("alexNet_CPU_" + str(i), "results/baselines/alexNet_CPUbaseline_" + str(i))
-			leNet.run_cpu("leNet_CPU_" + str(i), "results/baselines/leNet_CPUbaseline_" + str(i))
+			if "googleNet" in sys.argv:
+				googleNet.run_cpu("googleNet_CPU_" + str(i), "results/baselines/googleNet_CPUbaseline_" + str(i))
+			if "alexNet" in sys.argv:
+				alexNet.run_cpu("alexNet_CPU_" + str(i), "results/baselines/alexNet_CPUbaseline_" + str(i))
+			if "leNet" in sys.argv:
+				leNet.run_cpu("leNet_CPU_" + str(i), "results/baselines/leNet_CPUbaseline_" + str(i))
 
 		if "--gpu" in sys.argv:
-			alexNet.run_gpu("alexNet_GPU_" + str(i), "results/baselines/alexNet_GPUbaseline_" + str(i))
-			googleNet.run_gpu("googleNet_GPU_" + str(i), "results/baselines/googleNet_GPUbaseline_" + str(i))
-			leNet.run_gpu("leNet_GPU_" + str(i), "results/baselines/leNet_GPUbaseline_" + str(i))
+			if "alexNet" in sys.argv:
+				alexNet.run_gpu("alexNet_GPU_" + str(i), "results/baselines/alexNet_GPUbaseline_" + str(i))
+			if "googleNet" in sys.argv:
+				googleNet.run_gpu("googleNet_GPU_" + str(i), "results/baselines/googleNet_GPUbaseline_" + str(i))
+			if "leNet" in sys.argv:
+				leNet.run_gpu("leNet_GPU_" + str(i), "results/baselines/leNet_GPUbaseline_" + str(i))
+	else:
+		# Run each job in full 10 times, record the runtime
+		for i in range(10):
+			googleNet = GoogleNetJob(epochs=500)
+			alexNet = AlexNetJob(epochs=500)
+			leNet = LeNetJob(epochs=30000)
+
+			if "--cpu" in sys.argv:
+				if "googleNet" in sys.argv:
+					googleNet.run_cpu("googleNet_CPU_" + str(i), "results/baselines/googleNet_CPUbaseline_" + str(i))
+				if "alexNet" in sys.argv:
+					alexNet.run_cpu("alexNet_CPU_" + str(i), "results/baselines/alexNet_CPUbaseline_" + str(i))
+				if "leNet" in sys.argv:
+					leNet.run_cpu("leNet_CPU_" + str(i), "results/baselines/leNet_CPUbaseline_" + str(i))
+
+			if "--gpu" in sys.argv:
+				if "alexNet" in sys.argv:
+					alexNet.run_gpu("alexNet_GPU_" + str(i), "results/baselines/alexNet_GPUbaseline_" + str(i))
+				if "googleNet" in sys.argv:
+					googleNet.run_gpu("googleNet_GPU_" + str(i), "results/baselines/googleNet_GPUbaseline_" + str(i))
+				if "leNet" in sys.argv:
+					leNet.run_gpu("leNet_GPU_" + str(i), "results/baselines/leNet_GPUbaseline_" + str(i))
 
 if __name__ == '__main__':
 	##############################################
@@ -66,20 +101,33 @@ if __name__ == '__main__':
 				file_path = 'results/' + estimation_name + '/' + job_type + "/config_" + str(i)
 
 				# Estimate each job type at each configuration at each estimation method 100 times
-				for itr in range(100):
+				jobId = -1
+				useJobId = False
+				for arg in sys.argv:
+					if "--id=" in arg:
+						useJobId = True
+						jobId = int(arg.split("=")[1])
 
-					if job_type == "leNet":
-						if estimation_name == "linearRegression":
-							job = job_class(epochs=round(30000*config[1]))
-						else:
-							job = job_class(epochs=round(30000*config))
-					else:
-						if estimation_name == "linearRegression":
-							job = job_class(epochs=round(500*config[1]))
-						else:
-							job = job_class(epochs=round(500*config))
-					
+				if useJobId:
 					if "--cpu" in sys.argv:
-						job.run_cpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(itr), file_path + "/cpu" + str(itr))
+							job.run_cpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(useJobId), file_path + "/cpu" + str(useJobId))
 					if "--gpu" in sys.argv:
-						job.run_gpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(itr), file_path + "/gpu" + str(itr))
+						job.run_gpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(useJobId), file_path + "/gpu" + str(useJobId))
+				else:
+					for itr in range(100):
+
+						if job_type == "leNet":
+							if estimation_name == "linearRegression":
+								job = job_class(epochs=round(30000*config[1]))
+							else:
+								job = job_class(epochs=round(30000*config))
+						else:
+							if estimation_name == "linearRegression":
+								job = job_class(epochs=round(500*config[1]))
+							else:
+								job = job_class(epochs=round(500*config))
+						
+						if "--cpu" in sys.argv:
+							job.run_cpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(itr), file_path + "/cpu" + str(itr))
+						if "--gpu" in sys.argv:
+							job.run_gpu(job_type + "_" + estimation_name + "_" + str(i) + "_" + str(itr), file_path + "/gpu" + str(itr))
