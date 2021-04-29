@@ -1,5 +1,6 @@
 import subprocess
 import time_writter
+import os
 
 class Job:
 	JOB_ID = 0
@@ -14,7 +15,7 @@ class Job:
 		self.user = 1
 
 		self.mem = 15
-		self.thread_count = 16
+		self.thread_count = 8
 		self.cpu_compl_time = float('inf')
 		self.cpu_err = 1.0
 
@@ -23,15 +24,28 @@ class Job:
 		self.gpu_compl_time = float('inf')
 		self.gpu_err = 1.0
 
-	def run_cpu(self):
-		process = subprocess.Popen(self.get_args("cpu"), stdout=subprocess.PIPE)
-		output, error = process.communicate()
-		return output, error
+	# This no longer runs anything, but not creates a slurm script that can be run later
+	def run(self, hardware, job_name, output):
+		if not os.path.exists('slurm_scripts'):
+			os.makedirs('slurm_scripts')
 
-	def run_gpu(self):
-		process = subprocess.Popen(self.get_args("gpu"), stdout=subprocess.PIPE)
-		output, error = process.communicate()
-		return output, error
+		f = '''
+		#!/bin/bash
+		set -ex
+		git pull
+		'''
+		f += ' '.join(self.get_args(hardware))
+
+		with open('slurm_scripts/' + job_name + ".sh", "w") as slurm:
+			slurm.write(f)
+
+		process = subprocess.run(["/bin/bash", 'slurm_scripts/' + job_name + ".sh"])
+
+	def run_cpu(self, job_name, output):
+		self.run("cpu", job_name, output)
+
+	def run_gpu(self, job_name, output):
+		self.run("gpu", job_name, output)
 
 	def get_args(self, hardware):
 		raise Exception("Unsupported function 'get_args' for class JOB")
@@ -53,57 +67,41 @@ class GoogleNetJob(Job):
 		self.keep_prob = keep_prob
 
 	def get_args(self, hardware):
-		if hardware is "cpu":
+		if hardware == "cpu":
 			return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), str(self.epochs),
 			       "--cpu", "--numThreads", str(self.thread_count)]
 		return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), 
 		        str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
 
-# job: the job whose CPU and GPU time should be estimated
+class AlexNetJob(Job):
+	def get_args(self, hardware):
+		if hardware == "cpu":
+			return ["jobs/AlexNet/run.sh", str(self.epochs), "--cpu", "--numThreads", str(self.thread_count)]
+		return ["jobs/AlexNet/run.sh", str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
+
+class LeNetJob(Job):
+	def get_args(self, hardware):
+		if hardware == "cpu":
+			return ["jobs/LeNet/run.sh", str(self.epochs), "--cpu", "--numThreads", str(self.thread_count)]
+		return ["jobs/LeNet/run.sh", str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
+
+# output: the output of the job whose CPU and GPU time should be estimated
 # a: the lower percent to use for the estimaton
 # b: the upper percent to use for the estimation
-def estimate_job_time_linreg(job, a, b):
-	original_epochs = job.epochs
-	job.epochs = round(job.epochs * a)
+def estimate_job_time_linreg(output, a, b):
+	measurements = time_writter.parse_output(output)
+	
+	estimated_cpu_time = 0
+	estimated_gpu_time = 0
 
-	###################################
-	#####    ESTIMATE JOB TIME    #####
-	###################################
-	cpu_estimated = float('inf')
-	gpu_estimated = float('inf')
+	return (estimated_cpu_time, estimated_gpu_time)
 
-	job.epochs = original_epochs
-	job.cpu_compl_time = cpu_estimated
-	job.gpu_compl_time = gpu_estimated
-	job.cpu_err = 0.1
-	job.gpu_err = 0.1
+# job: the output of the job whose CPU and GPU time should be estimated
+# prop: the proportion of epochs to run for
+def estimate_job_time_writter(output, prop):
+	measurements = time_writter.parse_output(output)
+	
+	estimated_cpu_time = 0
+	estimated_gpu_time = 0
 
-# job: the job whose CPU and GPU time should be estimated
-# num_epochs: the number of epochs to run the estimation job for
-def estimate_job_time_time_writter(job, num_epochs):
-	original_epochs = job.epochs
-	job.epochs = num_epochs
-
-	times = []
-	for _ in range(self.num_samples):
-		output, error = jopCopy.run_cpu()
-		measurements = time_writter.parse_output(output)
-		times.append(sum(measurements))
-		
-	avgTime = sum(times) / len(times)
-	cpu_estimated = avgTime / a * original_epochs
-
-	times = []
-	for _ in range(self.num_samples):
-		output, error = jopCopy.run_gpu()
-		measurements = time_writter.parse_output(output)
-		times.append(sum(measurements))
-		
-	avgTime = sum(times) / len(times)
-	gpu_estimated = avgTime / a * original_epochs
-
-	job.epochs = original_epochs
-	job.cpu_compl_time = cpu_estimated
-	job.gpu_compl_time = gpu_estimated
-	job.cpu_err = 0.1
-	job.gpu_err = 0.1
+	return (estimated_cpu_time, estimated_gpu_time)
