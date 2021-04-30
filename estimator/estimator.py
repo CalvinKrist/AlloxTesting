@@ -62,112 +62,104 @@ class GoogleNetJob(Job):
 		        str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
 
 
-def estimate_job_time(tw_cpu_output):
-	# Find arguments
-	if "<ARGS>[" not in tw_cpu_output or "]</ARGS>" not in tw_cpu_output:
-		raise Exception("Arguments not included: ", tw_cpu_output)
-	args = tw_cpu_output.split("<ARGS>[")[-1]
-	args = args.split("]</ARGS>")[0]
-	args = args.replace("'", '')
-	args = args.split(", ")
-	# Find number of iterations
-	pattern = 'MAX_ITER = [0-9]*'
-	prog = re.compile(pattern)
-	result = prog.findall(tw_cpu_output)
-	epochs = [int(s) for s in result[0].split() if s.isdigit()][0]
+def estimate_job_time(tw_cpu_output, model_name):
+    '''
+    :param tw_cpu_output: single log file containing time writer output
+    :param model_name: str, alexnet or lenet models
+    '''
+    times = []
+    if model_name=="lenet":
+        times = parse_output_lenet(tw_cpu_output)
+    if model_name=="alexnet":
+        times = parse_output_alexnet(tw_cpu_output)
+    # Find arguments
+    if "<ARGS>[" not in tw_cpu_output or "]</ARGS>" not in tw_cpu_output:
+        raise Exception("Arguments not included: ", tw_cpu_output)
+    args = tw_cpu_output.split("<ARGS>[")[-1]
+    args = args.split("]</ARGS>")[0]
+    args = args.replace("'", '')
+    args = args.split(", ")
     
     # process args to call either linear regression or timewritter
-	linearReg = False
-	timeWritter = False
-	config = []
-	for i in args:
-		if "linearRegression" in i:
-			linearReg = True
-		if "timeWritter" in i:
-			timeWritter = True
-		if "config" in i:
-			config.append(i)
-	if not config:
-		raise Exception("No config value specified in args")
-	if not linearReg and not timeWritter:
-		raise Exception("Linear Regression Estimation or timewritter estimation not specified in args")
-	config_num = int(config[0].split("=")[1].split("'")[0])
-	
-	cpu_estimated = float('inf')
-	# Call linear reg estimation or time writter estimation depending on config param
-	if linearReg:
-		if config_num==0:
-			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.006, 0.009, epochs)
-		if config_num==1:
-			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.004, 0.011, epochs)
-		if config_num==2:
-			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.002, 0.013, epochs)
-	if timeWritter:
-		if config_num==0:
-			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.002, epochs)
-		if config_num==1:
-			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.008, epochs)
-		if config_num==2:
-			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.014, epochs)
-	return cpu_estimated
-		
+    linearReg = False
+    timeWritter = False
+    config = []
+    for i in args:
+        if "linearRegression" in i:
+            linearReg = True
+        if "timeWritter" in i:
+            timeWritter = True
+        if "config" in i:
+            config.append(i)
+    if not config:
+        raise Exception("No config value specified in args")
+    if not linearReg and not timeWritter:
+        raise Exception("Linear Regression Estimation or timewritter estimation not specified in args")
+    config_num = int(config[0].split("=")[1].split("'")[0])
+    
+    cpu_estimated = float('inf')
+    # Call linear reg estimation or time writter estimation depending on config param
+    if linearReg:
+        if config_num==0:
+            cpu_estimated = estimate_job_time_linreg(times, 0.006, 0.009, model_name)
+            aggregate_results(cpu_estimated, "linReg", config_num)
+        if config_num==1:
+            cpu_estimated = estimate_job_time_linreg(times, 0.004, 0.011, model_name)
+            aggregate_results(cpu_estimated, "linReg", config_num)
+        if config_num==2:
+            cpu_estimated = estimate_job_time_linreg(times, 0.002, 0.013, model_name)
+            aggregate_results(cpu_estimated, "linReg", config_num)
+    if timeWritter:
+        if config_num==0:
+            cpu_estimated = estimate_job_time_time_writter(times, 0.002, model_name)
+            aggregate_results(cpu_estimated, "tw", config_num)
+        if config_num==1:
+            cpu_estimated = estimate_job_time_time_writter(times, 0.008, model_name)
+            aggregate_results(cpu_estimated, "tw", config_num)
+        if config_num==2:
+            cpu_estimated = estimate_job_time_time_writter(times, 0.014, model_name)
+            aggregate_results(cpu_estimated, "tw", config_num)
+    return cpu_estimated
 
-# job: the job whose CPU and GPU time should be estimated
-# a: the lower percent to use for the estimaton
-# b: the upper percent to use for the estimation
-def estimate_job_time_linreg(tw_cpu_output, a, b, num_epochs):
+def estimate_job_time_linreg(times, a, b, model_name):
 	###################################
 	#####    ESTIMATE JOB TIME    #####
 	###################################
+    total_iterations = 0
+    if model_name == "lenet":
+        total_iterations = 30000
+    else:
+        total_iterations = 500
 
 	# Using a and b proportions, find corresponding epoch number
-	a_epochs = round(num_epochs * a)
-	b_epochs = round(num_epochs * b)
-	cpu_estimated = float('inf')
+    a_epochs = round(total_iterations * a)
+    times_iters = times[1:-1]
+    b_epochs = len(times_iters)
+    
+    a_epochs_times = sum(times_iters[:a_epochs]) + times[0]
+    b_epochs_times = sum(times_iters[a_epochs:]) + times[-1]
+    cpu_estimated = float('inf')
+    
+    slope = (b_epochs_times - a_epochs_times) / (b_epochs - a_epochs)
+    b = a_epochs_times - slope * a_epochs
+    
+    cpu_estimated = (slope*total_iterations)+b
+    return cpu_estimated
 
-	with open(tw_cpu_output, "r") as f:
-		lines = f.read()
-		# omit the first and last loading/writing values
-		epoch_times = time_writter.parse_output(lines)[1:-1]
-
-	# Get corresponding time at each proportioned epoch (sum all previous times)
-	a_time = sum(epoch_times[:a_epochs+1])
-	b_time = sum(epoch_times[:b_epochs+1])
-
-	# Perform linear regression IV: num_epochs, DV: time taken at epoch
-	X_cpu = np.array([a_epochs, b_epochs]).reshape(2,1)
-	y_cpu = [a_time, b_time]
-	reg = LinearRegression().fit(X_cpu, y_cpu)
-	cpu_estimated = reg.predict([[num_epochs]])[0]
-
-	return cpu_estimated
-
-# job: the job whose CPU and GPU time should be estimated
-# num_epochs: the number of epochs to run the estimation job for
-def estimate_job_time_time_writter(tw_cpu_output, proportion, num_epochs):
+def estimate_job_time_time_writter(times, proportion, model_name):
 
 	###################################
 	#####    ESTIMATE JOB TIME    #####
 	###################################
-
-	cpu_estimated = float('inf')
-	# Get epoch at proportioned value
-	proportion_epoch = round(num_epochs * proportion)
-
-	with open(tw_cpu_output, "r") as f:
-		lines = f.read()
-		# omit the first and last loading/writing values
-		epoch_times = time_writter.parse_output(lines)[1:-1]
-
-	# Get times at first epoch and proportioned epoch
-	first_epoch_time = epoch_times[0]
-	proportion_epoch_time = sum(epoch_times[:proportion_epoch+1])
-
-	# Perform linear fit to get predicted time at total epochs
-	X_cpu = np.array([1, proportion_epochs]).reshape(2,1)
-	y_cpu = [first_epoch_time, proportion_epoch_time]
-
-	reg = LinearRegression().fit(X_cpu, y_cpu)
-	cpu_estimated = reg.predict([[num_epochs]])[0]
-
-	return cpu_estimated
+    total_iterations = 0
+    if model_name == "lenet":
+        total_iterations = 30000
+    else:
+        total_iterations = 500
+    cpu_estimated = float('inf')
+    
+    slope = sum(times[1:-1])/len(times[1:-1])
+    b = times[0]+times[-1]
+    
+    cpu_estimated = (slope*total_iterations)+b
+    return cpu_estimated
