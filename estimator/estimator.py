@@ -1,8 +1,8 @@
 import subprocess
 import time_writter
 from sklearn.linear_model import LinearRegression
-import csv 
 import numpy as np
+import re
 class Job:
 	JOB_ID = 0
 	def __init__(self, epochs):
@@ -63,60 +63,51 @@ class GoogleNetJob(Job):
 
 
 def estimate_job_time(tw_cpu_output):
-	with open(tw_cpu_output) as csv_file:
-		csv_reader = csv.reader(csv_file, quoting=csv.QUOTE_NONE)
-		args = []
-		num_epochs = []
-		for row in csv_reader:
-			for field in row:
-				if field.startswith('"<ARGS>'):
-					args.append(row)
-				if field.startswith("MAX_ITER"):
-					num_epochs.append(row)
-	# find number of epochs
-	punctuations = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
-	epochs_proc = ""
-	for char in num_epochs[0][0]:
-		if char not in punctuations:
-			epochs_proc = epochs_proc + char
-	epochs = [int(s) for s in epochs_proc.split() if s.isdigit()][0]
-	print(args)
-	print(epochs)
-	# process args to call either linear regression or timewritter
+	# Find arguments
+	if "<ARGS>[" not in tw_cpu_output or "]</ARGS>" not in tw_cpu_output:
+		raise Exception("Arguments not included: ", tw_cpu_output)
+	args = tw_cpu_output.split("<ARGS>[")[-1]
+	args = args.split("]</ARGS>")[0]
+	args = args.replace("'", '')
+	args = args.split(", ")
+	# Find number of iterations
+	pattern = 'MAX_ITER = [0-9]*'
+	prog = re.compile(pattern)
+	result = prog.findall(tw_cpu_output)
+	epochs = [int(s) for s in result[0].split() if s.isdigit()][0]
+    
+    # process args to call either linear regression or timewritter
 	linearReg = False
 	timeWritter = False
 	config = []
-	for i in args[0]:
+	for i in args:
 		if "linearRegression" in i:
 			linearReg = True
 		if "timeWritter" in i:
 			timeWritter = True
 		if "config" in i:
 			config.append(i)
-	
 	if not config:
 		raise Exception("No config value specified in args")
 	if not linearReg and not timeWritter:
 		raise Exception("Linear Regression Estimation or timewritter estimation not specified in args")
-
 	config_num = int(config[0].split("=")[1].split("'")[0])
+	
 	cpu_estimated = float('inf')
 	# Call linear reg estimation or time writter estimation depending on config param
 	if linearReg:
 		if config_num==0:
-			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.6, 0.9, epochs)
+			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.006, 0.009, epochs)
 		if config_num==1:
-			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.4, 1.1, epochs)
+			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.004, 0.011, epochs)
 		if config_num==2:
-			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.2, 1.3, epochs)
+			cpu_estimated = estimate_job_time_linreg(tw_cpu_output, 0.002, 0.013, epochs)
 	if timeWritter:
 		if config_num==0:
 			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.002, epochs)
 		if config_num==1:
-			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.004, epochs)
-		if config_num==2:
 			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.008, epochs)
-		if config_num==3:
+		if config_num==2:
 			cpu_estimated = estimate_job_time_time_writter(tw_cpu_output, 0.014, epochs)
 	return cpu_estimated
 		
