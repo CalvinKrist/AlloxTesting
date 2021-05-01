@@ -64,8 +64,11 @@ class GoogleNetJob(Job):
 
 def estimate_job_time(tw_cpu_output, model_name):
     '''
+	Parses output from experiments and returns estimated cpu time
+
     :param tw_cpu_output: single log file containing time writer output
     :param model_name: str, alexnet or lenet models
+	:return cpu_estimated: float, estimated cpu time
     '''
     times = []
     if model_name=="lenet":
@@ -126,8 +129,9 @@ def estimate_job_time(tw_cpu_output, model_name):
     return cpu_estimated
 
 def estimate_job_time_linreg(times, a, b, model_name):
+	
 	###################################
-	#####    ESTIMATE JOB TIME    #####
+	#  Linear Regression Estimation   # 
 	###################################
     total_iterations = 0
     if model_name == "lenet":
@@ -160,9 +164,8 @@ def estimate_job_time_linreg(times, a, b, model_name):
     return cpu_estimated
 
 def estimate_job_time_time_writter(times, proportion, model_name):
-
 	###################################
-	#####    ESTIMATE JOB TIME    #####
+	#####    Detailed Estimator   #####
 	###################################
     total_iterations = 0
     if model_name == "lenet":
