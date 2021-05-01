@@ -1,7 +1,9 @@
 import subprocess
 import time_writter
+import os
 import numpy as np
 import re
+
 class Job:
 	JOB_ID = 0
 	def __init__(self, epochs):
@@ -15,7 +17,7 @@ class Job:
 		self.user = 1
 
 		self.mem = 15
-		self.thread_count = 16
+		self.thread_count = 8
 		self.cpu_compl_time = float('inf')
 		self.cpu_err = 1.0
 
@@ -24,15 +26,28 @@ class Job:
 		self.gpu_compl_time = float('inf')
 		self.gpu_err = 1.0
 
-	def run_cpu(self):
-		process = subprocess.Popen(self.get_args("cpu"), stdout=subprocess.PIPE)
-		output, error = process.communicate()
-		return output, error
+	# This no longer runs anything, but not creates a slurm script that can be run later
+	def run(self, hardware, job_name, output):
+		if not os.path.exists('slurm_scripts'):
+			os.makedirs('slurm_scripts')
 
-	def run_gpu(self):
-		process = subprocess.Popen(self.get_args("gpu"), stdout=subprocess.PIPE)
-		output, error = process.communicate()
-		return output, error
+		f = '''
+		#!/bin/bash
+		set -ex
+		git pull
+		'''
+		f += ' '.join(self.get_args(hardware))
+
+		with open('slurm_scripts/' + job_name + ".sh", "w") as slurm:
+			slurm.write(f)
+
+		process = subprocess.run(["/bin/bash", 'slurm_scripts/' + job_name + ".sh"])
+
+	def run_cpu(self, job_name, output):
+		self.run("cpu", job_name, output)
+
+	def run_gpu(self, job_name, output):
+		self.run("gpu", job_name, output)
 
 	def get_args(self, hardware):
 		raise Exception("Unsupported function 'get_args' for class JOB")
@@ -54,11 +69,23 @@ class GoogleNetJob(Job):
 		self.keep_prob = keep_prob
 
 	def get_args(self, hardware):
-		if hardware is "cpu":
+		if hardware == "cpu":
 			return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), str(self.epochs),
 			       "--cpu", "--numThreads", str(self.thread_count)]
 		return ["jobs/googleNet/run.sh", str(self.learn_rate), str(self.batch_size), str(self.keep_prob), 
 		        str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
+
+class AlexNetJob(Job):
+	def get_args(self, hardware):
+		if hardware == "cpu":
+			return ["jobs/AlexNet/run.sh", str(self.epochs), "--cpu", "--numThreads", str(self.thread_count)]
+		return ["jobs/AlexNet/run.sh", str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
+
+class LeNetJob(Job):
+	def get_args(self, hardware):
+		if hardware == "cpu":
+			return ["jobs/LeNet/run.sh", str(self.epochs), "--cpu", "--numThreads", str(self.thread_count)]
+		return ["jobs/LeNet/run.sh", str(self.epochs), "--gpu", "--numGPUs", str(self.gpu_count)]
 
 
 def estimate_job_time(tw_cpu_output, model_name):
