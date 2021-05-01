@@ -14,7 +14,10 @@ class TimeWritter:
 		self.t1 = t2
 
 	def print_results(self):
-		print("<TIME_WRITTER_OUTPUT>" + str(self.times) + "</TIME_WRITTER_OUTPUT>")
+		print(self.get_results())
+
+	def get_results(self):
+		return "<TIME_WRITTER_OUTPUT>" + str(self.times) + "</TIME_WRITTER_OUTPUT>"
 
 writter = TimeWritter()
 
@@ -26,6 +29,9 @@ def LogUpdate():
 
 def PrintResults():
 	writter.print_results()
+
+def GetResults():
+	return writter.get_results()
 
 def Reset():
 	writter.t1 = 0
