@@ -1,6 +1,5 @@
 import subprocess
 import time_writter
-from sklearn.linear_model import LinearRegression
 import numpy as np
 import re
 class Job:
