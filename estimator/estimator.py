@@ -102,23 +102,27 @@ def estimate_job_time(tw_cpu_output, model_name):
     if linearReg:
         if config_num==0:
             cpu_estimated = estimate_job_time_linreg(times, 0.006, 0.009, model_name)
-            aggregate_results(cpu_estimated, "linReg", config_num)
-        if config_num==1:
+            aggregate_results(cpu_estimated, "linReg", config_num, model_name)
+        elif config_num==1:
             cpu_estimated = estimate_job_time_linreg(times, 0.004, 0.011, model_name)
-            aggregate_results(cpu_estimated, "linReg", config_num)
-        if config_num==2:
+            aggregate_results(cpu_estimated, "linReg", config_num, model_name)
+        elif config_num==2:
             cpu_estimated = estimate_job_time_linreg(times, 0.002, 0.013, model_name)
-            aggregate_results(cpu_estimated, "linReg", config_num)
+            aggregate_results(cpu_estimated, "linReg", config_num, model_name)
+        else:
+            raise Exception("Invalid config: ", config)
     if timeWritter:
         if config_num==0:
             cpu_estimated = estimate_job_time_time_writter(times, 0.002, model_name)
-            aggregate_results(cpu_estimated, "tw", config_num)
-        if config_num==1:
+            aggregate_results(cpu_estimated, "tw", config_num, model_name)
+        elif config_num==2:
             cpu_estimated = estimate_job_time_time_writter(times, 0.008, model_name)
-            aggregate_results(cpu_estimated, "tw", config_num)
-        if config_num==2:
+            aggregate_results(cpu_estimated, "tw", config_num, model_name)
+        elif config_num==3:
             cpu_estimated = estimate_job_time_time_writter(times, 0.014, model_name)
-            aggregate_results(cpu_estimated, "tw", config_num)
+            aggregate_results(cpu_estimated, "tw", config_num, model_name)
+        else:
+            raise Exception("Invalid config: ", config)
     return cpu_estimated
 
 def estimate_job_time_linreg(times, a, b, model_name):
@@ -135,13 +139,22 @@ def estimate_job_time_linreg(times, a, b, model_name):
     a_epochs = round(total_iterations * a)
     times_iters = times[1:-1]
     b_epochs = len(times_iters)
+
+    a_epochs_times = 0
+    b_epochs_times = 0
+    for i in times_iters[:a_epochs]:
+        a_epochs_times += i
+    for j in times_iters:
+        b_epochs_times += j
+    a_epochs_times += times[0]
     
-    a_epochs_times = sum(times_iters[:a_epochs]) + times[0]
-    b_epochs_times = sum(times_iters[a_epochs:]) + times[-1]
+    b_epochs_times += times[-1]
+    b_epochs_times += times[0]
+    
     cpu_estimated = float('inf')
     
     slope = (b_epochs_times - a_epochs_times) / (b_epochs - a_epochs)
-    b = a_epochs_times - slope * a_epochs
+    b = a_epochs_times - (slope * a_epochs)
     
     cpu_estimated = (slope*total_iterations)+b
     return cpu_estimated
@@ -158,7 +171,10 @@ def estimate_job_time_time_writter(times, proportion, model_name):
         total_iterations = 500
     cpu_estimated = float('inf')
     
-    slope = sum(times[1:-1])/len(times[1:-1])
+    sum_times = 0
+    for i in times[1:-1]:
+        sum_times += i
+    slope = sum_times/len(times[1:-1])
     b = times[0]+times[-1]
     
     cpu_estimated = (slope*total_iterations)+b
