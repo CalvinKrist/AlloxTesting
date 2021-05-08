@@ -1,0 +1,1 @@
+cp ./input_files/jobs_input_10_Google_debug.txt C:/Users/Student/Desktop/dev/Github/allox_sim/input

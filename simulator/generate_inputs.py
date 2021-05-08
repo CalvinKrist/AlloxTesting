@@ -85,14 +85,23 @@ def genJobs(seed,num,real_mean=0,real_std=0):
 
 
 if __name__ == '__main__':
-    baseline_mean=178.7087746978
-    baseline_std=1.4014685177968365
-    est_mean=271.0005316963945
-    est_std=18.425086031121456
+    baseline_mean=243920.75280790022
+    baseline_std=0
+    est_mean=244173.4519112314
+    est_std=2899.3823651671128
+    downscale = 1000
+    baseline_mean/=downscale
+    baseline_std/=downscale
+    est_mean/=downscale
+    est_std/=downscale
+
     scale = (est_mean-baseline_mean)/baseline_mean
     sigma = est_std/est_mean
+    
+    scale = -.05
+    sigma = .1
     print(f"sigma: {sigma} mu: {scale}")
-    createInputFiles(seed=12345,mu=0,sigma=sigma,scale=scale,out_file="jobs_input_10_Google_debug.txt",real_mean=baseline_mean,real_std=baseline_std)
+    createInputFiles(seed=12345,mu=0,sigma=sigma,scale=scale,out_file="jobs_input_10_Google_debug.txt",real_mean=0,real_std=0)
     """
     true mean
     
