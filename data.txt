@@ -1,0 +1,1 @@
+All data for AlexNet and LeNet experiments can be found in the following google drive link: https://drive.google.com/drive/folders/1PowOtnPDYLgIEUiH2F9axHFDbKKgie6X?usp=sharing under the data folder 

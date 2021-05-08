@@ -48,13 +48,23 @@ def get_args():
     parser.add_argument('--maxepoch', type=int, default=100,
                         help='Max number of epochs for training')
 
-    parser.add_argument('--cifarPath', type=str, default="../../../data/cifar-10-batches-py",
+    parser.add_argument('--cifarPath', type=str, default="../../AlexNet/cifar-10",
                         help='Location of CIFAR dataset')
     parser.add_argument('--savePath', type=str, default=".",
                         help='Where to save model')
 
     parser.add_argument('--im_name', type=str, default='.png',
                         help='Part of image name')
+
+    # Hardware flags
+    parser.add_argument('--cpu', action='store_true',
+                        help='To use CPU or not')
+    parser.add_argument('--numThreads', type=int, default=16,
+                        help='Number of CPU threads to use')
+    parser.add_argument('--gpu', action='store_true',
+                        help='To use GPU or not')
+    parser.add_argument('--numGPUs', type=int, default=1,
+                        help='The number of GPUs to use')
 
     return parser.parse_args()
 
@@ -86,24 +96,48 @@ def train():
     # create a Trainer object for training control
     trainer = Trainer(train_model, valid_model, train_data, init_lr=FLAGS.lr)
 
-    with tf.Session() as sess:
-        writer = tf.summary.FileWriter(FLAGS.savePath)
-        saver = tf.train.Saver()
+    # Parse hardware
+    config = None
+    if FLAGS.cpu:
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+        print("Using CPU",flush=True)
+        config=tf.ConfigProto(inter_op_parallelism_threads=FLAGS.numThreads,
+                   intra_op_parallelism_threads=FLAGS.numThreads,
+                   device_count={'GPU':0, 'CPU':1})
+    elif FLAGS.gpu:
+        config=tf.ConfigProto(device_count={'GPU':FLAGS.numGPUs, 'CPU':1})
+        print("Using GPU",flush=True)
+        visible_gpus = ''
+        for gpu in range(FLAGS.numGPUs):
+            visible_gpus += str(gpu) + ","
+        config.gpu_options.visible_device_list=visible_gpus[:-1] # remove last comma
+    else:
+        raise Exception("Hardware not specified!")
+
+    print("Starting experiment.")
+    with tf.Session(config=config) as sess:
+        #writer = tf.summary.FileWriter(FLAGS.savePath)
+        #writer.add_graph(sess.graph)
         sess.run(tf.global_variables_initializer())
-        writer.add_graph(sess.graph)
         for epoch_id in range(FLAGS.maxepoch):
             time_writter.LogUpdate()
+            print("Epoch " + str(epoch_id) + " started.",flush=True)
+            print(time_writter.GetResults(),flush=True)
+            
             # train one epoch
-            trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob, summary_writer=writer)
-            # test the model on validation set after each epoch
-            trainer.valid_epoch(sess, dataflow=valid_data, summary_writer=writer)
-            saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
-        time_writter.LogUpdate()
-        saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
-        writer.close()
+            trainer.train_epoch(sess, keep_prob=FLAGS.keep_prob)
+            print(epoch_id,flush=True)
+            print(FLAGS.maxepoch,flush=True)
 
         time_writter.LogUpdate()
-        time_writter.PrintResults()
+        print("Saving model...")
+        saver = tf.train.Saver()
+        saver.save(sess, '{}inception-cifar-epoch-{}'.format(FLAGS.savePath, epoch_id))
+        #writer.close()
+
+        print(time_writter.GetResults())
+        print("Job completed.")
 
 
 def evaluate():
